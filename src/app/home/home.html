@@ -1,5 +1,6 @@
 <main class="page">
   <section class="card" aria-labelledby="welcome-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Miss France · Le jeu</p>
     <h1 id="welcome-title">Prête à jouer ?</h1>
     <p class="intro">Crée un salon ou rejoins celui de tes amis.</p>
@@ -39,6 +40,11 @@
       <button type="button" class="secondary" [disabled]="loading()" (click)="joinSalon()">
         Rejoindre
       </button>
+      @if (hasSavedGame()) {
+        <button type="button" class="secondary" [disabled]="loading()" (click)="reconnect()">
+          {{ loading() ? 'Patiente…' : 'Reprendre ma partie' }}
+        </button>
+      }
     </div>
   </section>
 </main>

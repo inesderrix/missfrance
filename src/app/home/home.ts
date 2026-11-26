@@ -14,6 +14,7 @@ export class Home {
   code = '';
   readonly loading = signal(false);
   readonly errorMessage = signal('');
+  readonly hasSavedGame = this.supabase.hasSavedGame;
 
   updateCode(code: string) {
     this.code = code.toUpperCase();
@@ -32,6 +33,24 @@ export class Home {
     await this.enterSalon(() =>
       this.supabase.joinSalon(this.code.trim(), this.pseudo.trim()),
     );
+  }
+
+  async reconnect() {
+    this.errorMessage.set('');
+    this.loading.set(true);
+    try {
+      await this.supabase.reconnectToSalon();
+      await this.router.navigateByUrl('/premiere-impression');
+    } catch (error) {
+      console.error('Impossible de reprendre la partie.', error);
+      this.errorMessage.set(
+        error instanceof Error
+          ? error.message
+          : 'Une erreur est survenue. Réessaie dans un instant.',
+      );
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async enterSalon(action: () => Promise<unknown>) {

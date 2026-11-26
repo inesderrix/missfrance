@@ -1,10 +1,12 @@
 :host {
   display: block;
   min-height: 100vh;
-  color: #2c1830;
+  color: var(--ink);
   background:
-    radial-gradient(ellipse at 10% 12%, #f9dce6 0, transparent 38%),
-    linear-gradient(135deg, #fff8f5, #f8eef5);
+    radial-gradient(circle at 12% 18%, #e8c66c44 0 2px, transparent 3px),
+    radial-gradient(circle at 84% 76%, #d2a84d33 0 2px, transparent 3px),
+    radial-gradient(ellipse at 10% 12%, #f3dfaa 0, transparent 38%),
+    linear-gradient(135deg, #fffaf0, #f5ebd2);
   font-family: Arial, sans-serif;
 }
 
@@ -18,16 +20,24 @@
 .card {
   box-sizing: border-box;
   width: min(100%, 440px);
-  padding: 40px;
-  border: 1px solid #f0dce7;
+  padding: 36px 40px 40px;
+  border: 1px solid #ead9ad;
   border-radius: 24px;
-  background: #fff;
-  box-shadow: 0 20px 60px #5e29421a;
+  background: linear-gradient(145deg, #fffefa, #fff8e9);
+  box-shadow: 0 20px 60px #79571924, inset 0 0 0 4px #fff9e8;
+}
+
+.brand-logo {
+  display: block;
+  width: min(100%, 210px);
+  height: 110px;
+  margin: 0 auto 18px;
+  object-fit: contain;
 }
 
 .eyebrow {
   margin: 0 0 12px;
-  color: #a33b68;
+  color: var(--gold-dark);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -41,7 +51,7 @@ h1 {
 
 .intro {
   margin: 12px 0 28px;
-  color: #745f70;
+  color: var(--muted);
 }
 
 label {
@@ -55,16 +65,16 @@ input {
   box-sizing: border-box;
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid #dfcfda;
+  border: 1px solid #dfcfb0;
   border-radius: 10px;
-  background: #fffdfd;
+  background: #fffefa;
   color: inherit;
   font: inherit;
 }
 
 input:focus {
-  border-color: #a33b68;
-  outline: 3px solid #a33b6826;
+  border-color: var(--gold);
+  outline: 3px solid #b58a3226;
 }
 
 .actions {
@@ -89,14 +99,20 @@ button:disabled {
 }
 
 .primary {
-  background: #a33b68;
-  color: #fff;
+  background: linear-gradient(135deg, #e4c36e, #b58a32 58%, #987025);
+  color: #2b2110;
+  box-shadow: 0 5px 14px #9a722a35;
 }
 
 .secondary {
-  border: 1px solid #a33b68;
-  background: #fff;
-  color: #8d2f58;
+  border: 1px solid #c7a250;
+  background: #fffdf7;
+  color: #795719;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
 }
 
 .error {

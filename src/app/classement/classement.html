@@ -1,0 +1,172 @@
+<main class="page">
+  <section class="ranking-section" aria-labelledby="ranking-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Dernière étape</p>
+    <h1 id="ranking-title">Classement final</h1>
+    <p class="intro">
+      @if (officialRanking().length === 5) {
+        Le classement officiel est annoncé. Découvre ton résultat.
+      } @else if (rankingLocked()) {
+        Tes pronostics sont verrouillés. En attente du classement officiel.
+      } @else {
+        Classe les 5 finalistes : Miss France, puis les 4 dauphines.
+      }
+    </p>
+    @if (isAdmin()) {
+      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
+    }
+
+    @if (loading()) {
+      <p role="status">Chargement du classement…</p>
+    } @else if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    } @else if (finalistIds().length !== 5) {
+      <p>Le résultat officiel du Top 5 n’est pas encore disponible.</p>
+    } @else if (officialRanking().length === 5) {
+      <section class="result-card">
+        <h2>Ton classement</h2>
+        @if (rankingIds().length === 0) {
+          <p>Tu n’avais pas enregistré de classement avant le verrouillage.</p>
+        } @else {
+          <ol class="ranking-list">
+            @for (candidateId of rankingIds(); track candidateId; let index = $index) {
+              @if (getCandidate(candidateId); as candidate) {
+                <li [class.correct-answer]="isCorrectRank(candidateId, index + 1)">
+                  <strong>{{ rankLabel(index + 1) }}</strong>
+                  <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                  @if (isCorrectRank(candidateId, index + 1)) {
+                    <span class="correct-badge">✓ Bon rang</span>
+                  }
+                </li>
+              }
+            }
+          </ol>
+          <p class="score">{{ getHitCount() }} / 5 positions exactes</p>
+        }
+      </section>
+
+      <section class="result-card">
+        <h2>Classement officiel</h2>
+        @if (resultsError()) {
+          <p class="error" role="alert">{{ resultsError() }}</p>
+        } @else {
+          <ol class="ranking-list">
+            @for (result of officialRanking(); track result.rang) {
+              @if (getCandidate(result.candidate_id); as candidate) {
+                <li>
+                  <strong>{{ rankLabel(result.rang) }}</strong>
+                  <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                </li>
+              }
+            }
+          </ol>
+        }
+      </section>
+
+      <section class="result-card scoreboard-card" aria-labelledby="scoreboard-title">
+        <h2 id="scoreboard-title">Récapitulatif des scores</h2>
+        <p class="score-rules">
+          Top 12 : 1 pt par candidate · Top 5 : 1 pt par candidate ·
+          Dauphine trouvée : 2 pts · Bonne Miss France : 5 pts
+        </p>
+        @if (scoreboard().length === 0) {
+          <p>Aucun joueur n’est enregistré dans ce salon.</p>
+        } @else {
+          <ol class="scoreboard">
+            @for (player of scoreboard(); track player.joueurId; let index = $index) {
+              <li [class.current-player]="player.joueurId === currentJoueurId">
+                <span class="score-position">{{ index + 1 }}</span>
+                <strong class="score-player">{{ player.pseudo }}</strong>
+                <span class="score-breakdown">
+                  Top 12 : {{ player.top12Points }} points ·
+                  Top 5 : {{ player.top5Points }} points ·
+                  Dauphines : {{ player.dauphinePoints }} points ·
+                  Miss France : {{ player.missFrancePoints }} points
+                </span>
+                <strong class="score-total">{{ player.total }} points</strong>
+              </li>
+            }
+          </ol>
+        }
+      </section>
+
+      @if (otherRankings().length > 0) {
+        <section class="result-card">
+          <h2>Classements des autres joueurs</h2>
+          @for (player of otherRankings(); track player.joueurId) {
+            <article class="player-ranking">
+              <strong>{{ player.pseudo }}</strong>
+              <ol>
+                @for (candidateId of player.candidateIds; track $index; let index = $index) {
+                  @if (getCandidate(candidateId); as candidate) {
+                    <li>{{ rankLabel(index + 1) }} : {{ candidate.region }}</li>
+                  }
+                }
+              </ol>
+            </article>
+          }
+        </section>
+      }
+    } @else if (rankingLocked()) {
+      <section class="result-card">
+        <h2>Ton classement verrouillé</h2>
+        @if (rankingIds().length === 0) {
+          <p>Tu n’avais pas enregistré de classement avant le verrouillage.</p>
+        } @else {
+          <ol class="ranking-list">
+            @for (candidateId of rankingIds(); track candidateId; let index = $index) {
+              @if (getCandidate(candidateId); as candidate) {
+                <li>
+                  <strong>{{ rankLabel(index + 1) }}</strong>
+                  <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                </li>
+              }
+            }
+          </ol>
+        }
+        <p>En attente de l’annonce du classement officiel…</p>
+      </section>
+    } @else {
+      <p class="selection-count" aria-live="polite">Fais glisser les candidates pour les classer, de Miss France en haut aux dauphines en bas.</p>
+      <section class="result-card">
+        <h2>Ton classement</h2>
+        <ol class="ranking-list editable-ranking">
+            @for (candidateId of editableRankingIds(); track candidateId; let index = $index) {
+              @if (getCandidate(candidateId); as candidate) {
+                <li
+                  [class.dragging]="draggedCandidateId() === candidateId"
+                  draggable="true"
+                  (dragstart)="startDragging(candidateId)"
+                  (dragover)="allowDrop($event)"
+                  (drop)="dropOn(candidateId)"
+                  (dragend)="stopDragging()"
+                >
+                  <span class="rank-number">{{ index + 1 }}</span>
+                  <span class="drag-handle" aria-hidden="true">☰</span>
+                  <img [src]="getPhotoUrl(candidate)" [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom" />
+                  <span class="rank-candidate">
+                    <strong>{{ rankLabel(index + 1) }}</strong>
+                    <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                  </span>
+                  <span class="move-controls">
+                    <button
+                      type="button"
+                      [disabled]="saving() || index === 0"
+                      [attr.aria-label]="'Monter ' + candidate.region"
+                      (click)="moveCandidate(candidateId, -1)"
+                    >↑</button>
+                    <button
+                      type="button"
+                      [disabled]="saving() || index === editableRankingIds().length - 1"
+                      [attr.aria-label]="'Descendre ' + candidate.region"
+                      (click)="moveCandidate(candidateId, 1)"
+                    >↓</button>
+                  </span>
+                </li>
+              }
+            }
+        </ol>
+      </section>
+    }
+  </section>
+</main>

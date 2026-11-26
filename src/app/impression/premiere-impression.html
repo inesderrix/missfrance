@@ -1,0 +1,69 @@
+<main class="page">
+  <section class="candidates-section" aria-labelledby="candidates-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Découvre les participantes</p>
+    <h1 id="candidates-title">Première impression</h1>
+    <h2>Toutes les candidates</h2>
+    <a class="next-step" routerLink="/top12">Constituer mon Top 12 <span aria-hidden="true">→</span></a>
+
+    <label class="search-label" for="region-search">Rechercher par région</label>
+    <input
+      id="region-search"
+      class="region-search"
+      type="search"
+      placeholder="Ex. Bretagne"
+      autocomplete="off"
+      [value]="regionSearch()"
+      (input)="updateRegionSearch(regionInput.value)"
+      #regionInput
+    />
+
+    @if (loading()) {
+      <p role="status">Chargement des candidates…</p>
+    } @else if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    } @else if (candidates().length === 0) {
+      <p>Aucune candidate n’est disponible pour le moment.</p>
+    } @else if (filteredCandidates().length === 0) {
+      <p>Aucune candidate ne correspond à cette région.</p>
+    } @else {
+      @if (ratingError()) {
+        <p class="error" role="alert">{{ ratingError() }}</p>
+      }
+      <div class="candidate-grid">
+        @for (candidate of filteredCandidates(); track candidate.id) {
+          <article class="candidate-card">
+            <img
+              [src]="getPhotoUrl(candidate)"
+              [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom"
+              loading="lazy"
+            />
+            <div class="candidate-info">
+              <h3 class="candidate-region">{{ candidate.region }}</h3>
+              <p class="candidate-name">{{ candidate.prenom }} {{ candidate.nom }}</p>
+              <p>{{ candidate.age }} ans</p>
+              <div
+                class="rating"
+                role="radiogroup"
+                [attr.aria-label]="'Note de ' + candidate.prenom + ' ' + candidate.nom"
+              >
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="star"
+                    [class.selected]="star <= getRating(candidate.id)"
+                    [attr.aria-checked]="getRating(candidate.id) === star"
+                    [attr.aria-label]="star + ' étoile' + (star > 1 ? 's' : '')"
+                    [disabled]="savingCandidateIds().has(candidate.id)"
+                    (click)="rateCandidate(candidate.id, star)"
+                  >★</button>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>

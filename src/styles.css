@@ -1,1 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  color-scheme: light;
+  --gold: #b58a32;
+  --gold-dark: #795719;
+  --gold-light: #f3dfaa;
+  --ink: #292317;
+  --muted: #71664f;
+  --ivory: #fffaf0;
+  --line: #ead9ad;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--ivory);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  font-family: Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}

@@ -1,0 +1,139 @@
+<main class="page">
+  <section class="top5-section" aria-labelledby="top5-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Étape suivante</p>
+    <h1 id="top5-title">Mon Top 5</h1>
+    @if (officialIds().length === 5) {
+      <p class="intro">Le résultat officiel est annoncé. Voici ton score et les bonnes réponses.</p>
+    } @else if (top5Locked() && qualifiedIds().length === 12) {
+      <p class="intro">Les pronostics Top 5 sont verrouillés. Demande à l’organisatrice d’ouvrir cette étape.</p>
+    } @else {
+      <p class="intro">Choisis les 5 candidates qui iront en finale parmi les 12 qualifiées.</p>
+    }
+    @if (!top5Locked() && officialIds().length !== 5) {
+      <p class="selection-count" aria-live="polite">{{ selectedIds().length }} / 5 sélectionnées</p>
+    }
+
+    @if (isAdmin()) {
+      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
+    }
+  
+    @if (loading()) {
+      <p role="status">Chargement des candidates qualifiées…</p>
+    } @else if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    } @else if (qualifiedIds().length !== 12) {
+      <p>Le résultat officiel du Top 12 n’est pas encore disponible.</p>
+    } @else if (officialIds().length === 5) {
+      <section class="recap-section">
+        <h2>Ton récapitulatif</h2>
+        @if (selectedCandidates().length === 0) {
+          <p>Tu n’avais pas encore enregistré de pronostic Top 5.</p>
+        } @else {
+          <ul class="recap-list">
+            @for (candidate of selectedCandidates(); track candidate.id) {
+              <li [class.correct-answer]="officialIds().includes(candidate.id)">
+                <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
+                @if (officialIds().includes(candidate.id)) {
+                  <span class="correct-badge">✓ Bonne réponse</span>
+                }
+              </li>
+            }
+          </ul>
+          <p class="score">{{ getHitCount(selectedIds()) }} / 5 bonnes réponses</p>
+        }
+      </section>
+
+      <section class="official-section">
+        <h2>Top 5 officiel</h2>
+        @if (resultsError()) {
+          <p class="error" role="alert">{{ resultsError() }}</p>
+        } @else {
+          <div class="official-list">
+            @for (candidate of filteredCandidates(); track candidate.id) {
+              @if (officialIds().includes(candidate.id)) {
+                <p><strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}</p>
+              }
+            }
+          </div>
+        }
+      </section>
+
+      @if (otherPredictions().length > 0) {
+        <section class="official-section">
+          <h2>Pronostics des autres joueurs</h2>
+          @for (player of otherPredictions(); track player.joueurId) {
+            <article class="player-result">
+              <strong>{{ player.pseudo }}</strong>
+              <span>{{ getHitCount(player.candidateIds) }} / 5 bonnes réponses — régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong></span>
+            </article>
+          }
+        </section>
+      }
+      <a class="next-stage-link" routerLink="/classement">Passer au classement final →</a>
+    } @else if (top5Locked()) {
+      <section class="recap-section">
+        <h2>Ton récapitulatif</h2>
+        @if (selectedCandidates().length === 0) {
+          <p>Tu n’avais sélectionné aucune candidate avant le verrouillage.</p>
+        } @else {
+          <ul class="recap-list">
+            @for (candidate of selectedCandidates(); track candidate.id) {
+              <li>
+                <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
+              </li>
+            }
+          </ul>
+        }
+      </section>
+      <section class="official-section">
+        <h2>Pronostics verrouillés</h2>
+        <p>Ton Top 5 est enregistré. En attente de l’annonce des résultats par l’organisatrice…</p>
+      </section>
+    } @else {
+      <label class="search-label" for="region-search">Filtrer par région</label>
+      <input
+        id="region-search"
+        class="region-search"
+        type="search"
+        placeholder="Ex. Bretagne"
+        autocomplete="off"
+        [value]="search()"
+        (input)="updateSearch(searchInput.value)"
+        #searchInput
+      />
+
+      <div class="candidate-grid">
+        @for (candidate of filteredCandidates(); track candidate.id) {
+          <article class="candidate-card" [class.selected-card]="isSelected(candidate.id)">
+            <img
+              [src]="getPhotoUrl(candidate)"
+              [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom"
+              loading="lazy"
+            />
+            <div class="candidate-info">
+              <h2>{{ candidate.region }}</h2>
+              <p class="candidate-name">{{ candidate.prenom }} {{ candidate.nom }}</p>
+              <p class="rating">
+                Ta note : <span aria-label="étoiles">{{ ratings()[candidate.id] ?? 0 }} ★ / 5</span>
+              </p>
+              <button
+                type="button"
+                class="select-button"
+                [class.selected]="isSelected(candidate.id)"
+                [disabled]="saving() || top5Locked() || (!isSelected(candidate.id) && selectedIds().length >= 5)"
+                [attr.aria-pressed]="isSelected(candidate.id)"
+                (click)="toggleCandidate(candidate.id)"
+              >
+                {{ isSelected(candidate.id) ? '✓ Dans mon Top 5' : 'Ajouter au Top 5' }}
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+      @if (filteredCandidates().length === 0) {
+        <p>Aucune candidate qualifiée ne correspond à cette région.</p>
+      }
+    }
+  </section>
+</main>

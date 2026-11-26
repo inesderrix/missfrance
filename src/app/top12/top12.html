@@ -1,0 +1,127 @@
+<main class="page">
+  <section class="top12-section" aria-labelledby="top12-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Étape suivante</p>
+    <h1 id="top12-title">Mon Top 12</h1>
+    <p class="intro">
+      @if (!top12Locked()) {
+        Choisis les 12 candidates que tu préfères. Elles sont classées par tes notes, de la meilleure note à la moins élevée.
+      } @else {
+        Les pronostics Top 12 sont verrouillés. Ils sont maintenant visibles par les joueurs.
+      }
+    </p>
+    @if (!top12Locked()) {
+      <p class="selection-count" aria-live="polite">{{ selectedIds().length }} / 12 sélectionnées</p>
+    }
+
+    @if (isAdmin()) {
+      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
+    }
+
+    @if (!loading() && !errorMessage() && !top12Locked()) {
+      <label class="search-label" for="region-search">Filtrer par région</label>
+      <input
+        id="region-search"
+        class="region-search"
+        type="search"
+        placeholder="Ex. Bretagne"
+        autocomplete="off"
+        [value]="search()"
+        (input)="updateSearch(searchInput.value)"
+        #searchInput
+      />
+    }
+
+    @if (loading()) {
+      <p role="status">Chargement du Top 12…</p>
+    } @else if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    } @else if (top12Locked()) {
+      <section class="recap-section" aria-labelledby="recap-title">
+        <h2 id="recap-title">Ton récapitulatif</h2>
+        @if (selectedCandidates().length === 0) {
+          <p>Tu n’avais sélectionné aucune candidate avant le verrouillage.</p>
+        } @else {
+          <ul class="recap-list">
+            @for (candidate of selectedCandidates(); track candidate.id) {
+              <li [class.correct-answer]="officialIds().includes(candidate.id)">
+                <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
+                @if (officialIds().length === 12 && officialIds().includes(candidate.id)) {
+                  <span class="correct-badge">✓ Bonne réponse</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="results-section" aria-labelledby="results-title">
+        <h2 id="results-title">Résultat officiel du Top 12</h2>
+        @if (resultsError()) {
+          <p class="error" role="alert">{{ resultsError() }}</p>
+        } @else if (officialIds().length !== 12) {
+          <p>En attente de l’annonce des résultats par l’organisatrice…</p>
+        } @else {
+          <p>Tu as {{ getHitCount(selectedIds()) }} bonne(s) réponse(s) sur 12.</p>
+          <div class="official-list">
+            @for (candidate of candidates(); track candidate.id) {
+              @if (officialIds().includes(candidate.id)) {
+                <p><strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}</p>
+              }
+            }
+          </div>
+        }
+
+        @if (otherPlayerPredictions().length > 0) {
+          <h3>Pronostics des joueurs</h3>
+          @for (player of otherPlayerPredictions(); track player.joueurId) {
+            <article class="player-result">
+              <strong>{{ player.pseudo }}</strong>
+              @if (officialIds().length === 12) {
+                <span>{{ getHitCount(player.candidateIds) }} / 12 bonnes réponses — régions : <strong>{{ getCandidateRegions(player.candidateIds) || 'aucune sélection' }}</strong></span>
+              } @else {
+                <span>{{ player.candidateIds.length }} candidates — régions : <strong>{{ getCandidateRegions(player.candidateIds) || 'aucune sélection' }}</strong></span>
+              }
+            </article>
+          }
+        }
+      </section>
+      @if (officialIds().length === 12) {
+        <a class="next-stage-link" routerLink="/top5">Passer à l’étape Top 5 →</a>
+      }
+    } @else if (sortedCandidates().length === 0) {
+      <p>Aucune candidate ne correspond à cette région.</p>
+    } @else {
+      <div class="candidate-grid">
+        @for (candidate of sortedCandidates(); track candidate.id) {
+          <article class="candidate-card" [class.in-top12]="isSelected(candidate.id)">
+            <img
+              [src]="getPhotoUrl(candidate)"
+              [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom"
+              loading="lazy"
+            />
+            <div class="candidate-info">
+              <h2>{{ candidate.region }}</h2>
+              <p class="candidate-name">{{ candidate.prenom }} {{ candidate.nom }}</p>
+              <p>{{ candidate.age }} ans</p>
+              <p class="rating">
+                Note : <span aria-label="étoiles">{{ ratings()[candidate.id] ?? 0 }} ★ / 5</span>
+              </p>
+              <button
+                type="button"
+                class="select-button"
+                [class.selected]="isSelected(candidate.id)"
+                [disabled]="saving() || top12Locked() || (!isSelected(candidate.id) && selectedIds().length >= 12)"
+                [attr.aria-pressed]="isSelected(candidate.id)"
+                (click)="toggleCandidate(candidate.id)"
+              >
+                <span aria-hidden="true">{{ isSelected(candidate.id) ? '♥' : '♡' }}</span>
+                {{ isSelected(candidate.id) ? 'Dans ton Top 12' : 'Ajouter au Top 12' }}
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>

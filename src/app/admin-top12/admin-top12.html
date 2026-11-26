@@ -1,0 +1,445 @@
+<main class="page">
+  <section class="admin-section" aria-labelledby="admin-title">
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Espace organisatrice</p>
+    <h1 id="admin-title">Administration du Top 12</h1>
+    <a class="back-link" routerLink="/top12">← Retour à mon Top 12</a>
+
+    @if (loading()) {
+      <p role="status">Chargement du salon…</p>
+    } @else if (errorMessage() && !isAdmin()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+      <a routerLink="/">Retour à l’accueil</a>
+    } @else if (salon(); as currentSalon) {
+      <p class="salon-name">{{ currentSalon.nom }}</p>
+      <div class="room-code">
+        <span>Code du salon</span>
+        <strong>{{ currentSalon.code }}</strong>
+      </div>
+      <p class="status">Statut : <strong>{{ currentSalon.statut }}</strong></p>
+
+      <section class="progress-section" aria-labelledby="progress-title">
+        <h2 id="progress-title">Suivi des étapes</h2>
+        <div class="progress-grid">
+          <article class="progress-item">
+            <span>Pronostics Top 12</span>
+            <strong
+              class="progress-badge"
+              [class.complete]="predictionsLocked()"
+              [class.pending]="!predictionsLocked()"
+            >
+              @if (top12Validated()) {
+                Top 12 verrouillés · Top 5 {{ currentSalon.statut === 'ouvert' ? 'ouverts' : 'verrouillés' }}
+              } @else {
+                {{ predictionsLocked() ? 'Verrouillés' : 'Ouverts' }}
+              }
+            </strong>
+            <p>
+              @if (top12Validated()) {
+                Les choix Top 12 restent figés.
+                {{ currentSalon.statut === 'ouvert'
+                  ? 'Les joueurs peuvent saisir leur Top 5.'
+                  : 'Les pronostics Top 5 sont verrouillés.' }}
+              } @else {
+                {{ predictionsLocked()
+                  ? 'Les joueurs ne peuvent plus modifier leurs choix.'
+                  : 'À verrouiller avant de saisir les résultats.' }}
+              }
+            </p>
+          </article>
+          <article class="progress-item">
+            <span>Résultat Top 12</span>
+            <strong
+              class="progress-badge"
+              [class.complete]="top12Validated()"
+              [class.pending]="!top12Validated()"
+            >
+              {{ top12Validated() ? 'Validé' : officialIds().length + ' / 12' }}
+            </strong>
+            <p>{{ top12Validated() ? 'Résultat officiel publié.' : 'Résultat en attente de validation.' }}</p>
+          </article>
+          <article class="progress-item">
+            <span>Résultat Top 5</span>
+            <strong
+              class="progress-badge"
+              [class.complete]="top5Validated()"
+              [class.pending]="!top5Validated()"
+            >
+              @if (top5Validated()) {
+                Validé
+              } @else if (!top12Validated()) {
+                En attente du Top 12
+              } @else {
+                {{ officialTop5Ids().length }} / 5
+              }
+            </strong>
+            <p>
+              {{ top5Validated()
+                ? 'Résultat officiel publié.'
+                : 'Résultat en attente de validation.' }}
+            </p>
+          </article>
+          <article class="progress-item">
+            <span>Classement final</span>
+            <strong
+              class="progress-badge"
+              [class.complete]="rankingValidated()"
+              [class.pending]="!rankingValidated()"
+            >
+              @if (rankingValidated()) {
+                Validé
+              } @else if (!top5Validated()) {
+                En attente du Top 5
+              } @else {
+                {{ officialRanking().length }} / 5
+              }
+            </strong>
+            <p>
+              {{ rankingValidated()
+                ? 'Classement officiel publié ; salon terminé.'
+                : 'Classement officiel en attente.' }}
+            </p>
+          </article>
+        </div>
+      </section>
+
+      @if (errorMessage()) {
+        <p class="error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      @if (!predictionsLocked()) {
+        <section class="stage-card">
+          <h2>Avant l’émission</h2>
+          <p>Verrouille les pronostics avant l’annonce du Top 12. Les joueurs ne pourront plus modifier leurs choix.</p>
+          <button type="button" class="primary" [disabled]="locking()" (click)="lockPredictions()">
+            {{ locking() ? 'Verrouillage…' : 'Verrouiller les pronostics' }}
+          </button>
+        </section>
+      } @else {
+        <section class="stage-card">
+          <h2>Top 12 annoncé</h2>
+          @if (officialIds().length === 12) {
+            <p class="success">Le résultat officiel du Top 12 est publié.</p>
+            @if (currentSalon.statut === 'verrouille') {
+              <p>Le Top 12 est validé, mais les pronostics Top 5 sont encore verrouillés.</p>
+              <button
+                type="button"
+                class="primary"
+                [disabled]="saving()"
+                (click)="reopenForTop5()"
+              >
+                {{ saving() ? 'Ouverture…' : 'Ouvrir les pronostics du Top 5' }}
+              </button>
+            } @else {
+              <p>Les pronostics Top 12 restent verrouillés. Les joueurs peuvent maintenant saisir leur Top 5.</p>
+            }
+          } @else {
+            <p>Sélectionne les 12 candidates annoncées, puis valide le résultat.</p>
+          }
+          <p class="selection-count" aria-live="polite">{{ selectedIds().length }} / 12 sélectionnées</p>
+
+          @if (officialIds().length < 12) {
+            <label class="search-label" for="candidate-search">Filtrer par région</label>
+            <input
+              id="candidate-search"
+              class="region-search"
+              type="search"
+              placeholder="Ex. Bretagne"
+              autocomplete="off"
+              [value]="search()"
+              (input)="updateSearch(searchInput.value)"
+              #searchInput
+            />
+
+            <div class="candidate-grid">
+              @for (candidate of filteredCandidates(); track candidate.id) {
+                <article class="candidate-card" [class.selected-card]="isSelected(candidate.id)">
+                  <img
+                    [src]="getPhotoUrl(candidate)"
+                    [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom"
+                    loading="lazy"
+                  />
+                  <div class="candidate-info">
+                    <h3>{{ candidate.region }}</h3>
+                    <p class="candidate-name">{{ candidate.prenom }} {{ candidate.nom }} · {{ candidate.age }} ans</p>
+                    <button
+                      type="button"
+                      class="select-button"
+                      [class.selected]="isSelected(candidate.id)"
+                      [disabled]="saving() || (!isSelected(candidate.id) && selectedIds().length >= 12)"
+                      [attr.aria-pressed]="isSelected(candidate.id)"
+                      (click)="toggleCandidate(candidate.id)"
+                    >
+                      {{ isSelected(candidate.id) ? '✓ Dans le Top 12' : 'Ajouter au Top 12' }}
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+            <button
+              type="button"
+              class="primary publish-button"
+              [disabled]="saving() || selectedIds().length !== 12"
+              (click)="publishTop12()"
+            >
+              {{ saving() ? 'Publication…' : 'Valider le Top 12 officiel' }}
+            </button>
+          } @else {
+            <div class="official-grid">
+              @for (candidate of candidates(); track candidate.id) {
+                @if (officialIds().includes(candidate.id)) {
+                  <article class="official-candidate">
+                    <img [src]="getPhotoUrl(candidate)" [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom" />
+                    <p><strong>{{ candidate.region }}</strong><br />{{ candidate.prenom }} {{ candidate.nom }}</p>
+                  </article>
+                }
+              }
+            </div>
+          }
+        </section>
+
+        <section class="predictions-section" aria-labelledby="predictions-title">
+          <h2 id="predictions-title">Pronostics des joueurs</h2>
+          @if (playerPredictions().length === 0) {
+            <p>Aucun joueur n’est enregistré dans ce salon.</p>
+          } @else {
+            @for (player of playerPredictions(); track player.joueurId) {
+              <article class="player-prediction">
+                <h3>{{ player.pseudo }}</h3>
+                @if (player.candidateIds.length === 0) {
+                  <p>Aucun pronostic Top 12 enregistré.</p>
+                } @else {
+                  <p>{{ player.candidateIds.length }} candidate(s) — régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong></p>
+                }
+              </article>
+            }
+          }
+        </section>
+
+        @if (officialIds().length === 12) {
+          <section class="stage-card" aria-labelledby="top5-title">
+            <h2 id="top5-title">Top 5 annoncé</h2>
+            @if (officialTop5Ids().length === 5) {
+              <p class="success">Le résultat officiel du Top 5 est publié.</p>
+              <div class="official-grid">
+                @for (candidate of candidates(); track candidate.id) {
+                  @if (officialTop5Ids().includes(candidate.id)) {
+                    <article class="official-candidate">
+                      <img [src]="getPhotoUrl(candidate)" [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom" />
+                      <p><strong>{{ candidate.region }}</strong><br />{{ candidate.prenom }} {{ candidate.nom }}</p>
+                    </article>
+                  }
+                }
+              </div>
+            } @else {
+              @if (currentSalon.statut === 'ouvert') {
+                <p>Les joueurs peuvent encore modifier leurs pronostics Top 5.</p>
+                <p>Verrouille-les lorsque les 5 candidates ont été annoncées.</p>
+                <button
+                  type="button"
+                  class="primary publish-button"
+                  [disabled]="locking()"
+                  (click)="lockTop5Predictions()"
+                >
+                  {{ locking() ? 'Verrouillage…' : 'Verrouiller les pronostics Top 5' }}
+                </button>
+              } @else {
+                <p class="success">Les pronostics Top 5 sont verrouillés. Sélectionne les 5 candidates annoncées.</p>
+                <p class="selection-count" aria-live="polite">{{ top5Ids().length }} / 5 sélectionnées</p>
+                <div class="candidate-grid">
+                  @for (candidate of candidates(); track candidate.id) {
+                    @if (officialIds().includes(candidate.id)) {
+                      <article class="candidate-card" [class.selected-card]="isTop5Selected(candidate.id)">
+                        <img
+                          [src]="getPhotoUrl(candidate)"
+                          [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom"
+                          loading="lazy"
+                        />
+                        <div class="candidate-info">
+                          <h3>{{ candidate.region }}</h3>
+                          <p class="candidate-name">{{ candidate.prenom }} {{ candidate.nom }}</p>
+                          <button
+                            type="button"
+                            class="select-button"
+                            [class.selected]="isTop5Selected(candidate.id)"
+                            [disabled]="saving() || (!isTop5Selected(candidate.id) && top5Ids().length >= 5)"
+                            [attr.aria-pressed]="isTop5Selected(candidate.id)"
+                            (click)="toggleTop5Candidate(candidate.id)"
+                          >
+                            {{ isTop5Selected(candidate.id) ? '✓ Dans le Top 5' : 'Ajouter au Top 5' }}
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="primary publish-button"
+                  [disabled]="saving() || top5Ids().length !== 5"
+                  (click)="publishTop5()"
+                >
+                  {{ saving() ? 'Publication…' : 'Valider le Top 5 officiel' }}
+                </button>
+              }
+            }
+          </section>
+
+          @if (officialTop5Ids().length === 5 || currentSalon.statut !== 'ouvert') {
+            <section class="predictions-section" aria-labelledby="top5-predictions-title">
+              <h2 id="top5-predictions-title">Pronostics Top 5 des joueurs</h2>
+              @if (top5PlayerPredictions().length === 0) {
+                <p>Aucun joueur n’est enregistré dans ce salon.</p>
+              } @else {
+                @for (player of top5PlayerPredictions(); track player.joueurId) {
+                  <article class="player-prediction">
+                    <h3>{{ player.pseudo }}</h3>
+                    @if (player.candidateIds.length === 0) {
+                      <p>Aucun pronostic Top 5 enregistré.</p>
+                    } @else {
+                      <p>
+                        {{ player.candidateIds.length }} candidate(s) —
+                        régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong>
+                      </p>
+                    }
+                  </article>
+                }
+              }
+            </section>
+          }
+        }
+
+        @if (top5Validated()) {
+          <section class="stage-card" aria-labelledby="ranking-title">
+            <h2 id="ranking-title">Classement final</h2>
+            @if (rankingValidated()) {
+              <p class="success">Le classement officiel est publié. Le salon est terminé.</p>
+              <ol class="ranking-list">
+                @for (result of officialRanking(); track result.rang) {
+                  @if (getCandidate(result.candidate_id); as candidate) {
+                    <li>
+                      <strong>{{ rankingLabel(result.rang) }}</strong>
+                      <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                    </li>
+                  }
+                }
+              </ol>
+            } @else if (currentSalon.statut === 'ouvert') {
+              <p>Les joueurs peuvent classer les 5 candidates du Top 5.</p>
+              <p>Verrouille les pronostics lorsque le classement est annoncé.</p>
+              <button
+                type="button"
+                class="primary publish-button"
+                [disabled]="locking()"
+                (click)="lockRankingPredictions()"
+              >
+                {{ locking() ? 'Verrouillage…' : 'Verrouiller les pronostics du classement' }}
+              </button>
+            } @else {
+              <p>
+                Classe les candidates dans l’ordre final : Miss France en haut,
+                puis les dauphines. Fais glisser les candidates pour modifier l’ordre.
+              </p>
+              <ol class="ranking-list editable-ranking">
+                @for (candidateId of rankingIds(); track candidateId; let index = $index) {
+                  @if (getCandidate(candidateId); as candidate) {
+                    <li
+                      [class.dragging]="draggedRankingCandidateId() === candidateId"
+                      draggable="true"
+                      (dragstart)="startRankingDrag(candidateId)"
+                      (dragover)="allowRankingDrop($event)"
+                      (drop)="dropRankingCandidate(candidateId)"
+                      (dragend)="stopRankingDrag()"
+                    >
+                      <span class="rank-number">{{ index + 1 }}</span>
+                      <span class="drag-handle" aria-hidden="true">☰</span>
+                      <img [src]="getPhotoUrl(candidate)" [alt]="'Photo de ' + candidate.prenom + ' ' + candidate.nom" />
+                      <span class="rank-candidate">
+                        <strong>{{ rankingLabel(index + 1) }}</strong>
+                        <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                      </span>
+                      <span class="move-controls">
+                        <button
+                          type="button"
+                          [disabled]="saving() || index === 0"
+                          [attr.aria-label]="'Remonter ' + candidate.region + ' dans les annonces'"
+                          (click)="moveRankingCandidate(candidateId, -1)"
+                        >↑</button>
+                        <button
+                          type="button"
+                          [disabled]="saving() || index === rankingIds().length - 1"
+                          [attr.aria-label]="'Descendre ' + candidate.region + ' dans les annonces'"
+                          (click)="moveRankingCandidate(candidateId, 1)"
+                        >↓</button>
+                      </span>
+                    </li>
+                  }
+                }
+              </ol>
+              <button
+                type="button"
+                class="primary publish-button"
+                [disabled]="saving() || rankingIds().length !== 5"
+                (click)="publishRanking()"
+              >
+                {{ saving() ? 'Publication…' : 'Valider le classement officiel' }}
+              </button>
+            }
+          </section>
+
+          @if (currentSalon.statut === 'verrouille' || currentSalon.statut === 'termine') {
+            <section class="predictions-section" aria-labelledby="ranking-predictions-title">
+              <h2 id="ranking-predictions-title">Pronostics du classement des joueurs</h2>
+              @if (rankingPlayerPredictions().length === 0) {
+                <p>Aucun joueur n’est enregistré dans ce salon.</p>
+              } @else {
+                @for (player of rankingPlayerPredictions(); track player.joueurId) {
+                  <article class="player-prediction">
+                    <h3>{{ player.pseudo }}</h3>
+                    @if (player.candidateIds.length === 0) {
+                      <p>Aucun classement enregistré.</p>
+                    } @else {
+                      <ol class="player-ranking-list">
+                        @for (candidateId of player.candidateIds; track $index; let index = $index) {
+                          @if (candidateId; as selectedCandidateId) {
+                            @if (getCandidate(selectedCandidateId); as candidate) {
+                              <li>
+                                <strong>{{ rankingLabel(index + 1) }}</strong> :
+                                {{ candidate.region }}
+                              </li>
+                            }
+                          }
+                        }
+                      </ol>
+                    }
+                  </article>
+                }
+              }
+            </section>
+          }
+
+          @if (rankingValidated()) {
+            <section class="predictions-section" aria-labelledby="scoreboard-title">
+              <h2 id="scoreboard-title">Récapitulatif des points</h2>
+              @if (scoreboard().length === 0) {
+                <p>Aucun joueur n’est enregistré dans ce salon.</p>
+              } @else {
+                @for (player of scoreboard(); track player.joueurId; let index = $index) {
+                  <article class="player-prediction scoreboard-player">
+                    <h3>{{ index + 1 }}. {{ player.pseudo }} — {{ player.total }} points</h3>
+                    <ul>
+                      <li>Top 12 : {{ player.top12Points }} points</li>
+                      <li>Top 5 : {{ player.top5Points }} points</li>
+                      <li>Dauphines trouvées : {{ player.dauphinePoints }} points</li>
+                      <li>Bonne Miss France : {{ player.missFrancePoints }} points</li>
+                    </ul>
+                  </article>
+                }
+              }
+            </section>
+          }
+        }
+      }
+    }
+  </section>
+</main>
