@@ -1,0 +1,19 @@
+<nav class="page-nav" aria-label="Navigation principale">
+  <a class="icon-link" routerLink="/" aria-label="Retour à l’accueil" title="Accueil">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+    </svg>
+  </a>
+  @if (isAdmin()) {
+    <a
+      class="icon-link"
+      routerLink="/admin/top12"
+      aria-label="Accéder à l’administration du salon"
+      title="Administration"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6zm0 4a3 3 0 0 1 3 3c0 1.1-.6 2.1-1.5 2.6L16 16h-8l2.5-3.4A3 3 0 0 1 9 10a3 3 0 0 1 3-3" />
+      </svg>
+    </a>
+  }
+</nav>

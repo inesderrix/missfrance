@@ -1,15 +1,25 @@
 <main class="page">
   <section class="admin-section" aria-labelledby="admin-title">
+    <nav class="page-nav" aria-label="Navigation principale">
+      <a class="icon-link" [routerLink]="currentStageRoute()" aria-label="Retour à l’étape en cours" title="Étape en cours">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m14 5-7 7 7 7M7 12h13" />
+        </svg>
+      </a>
+      <a class="icon-link" routerLink="/" aria-label="Retour à l’accueil" title="Accueil">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+        </svg>
+      </a>
+    </nav>
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Espace organisatrice</p>
     <h1 id="admin-title">Administration du Top 12</h1>
-    <a class="back-link" routerLink="/top12">← Retour à mon Top 12</a>
 
     @if (loading()) {
       <p role="status">Chargement du salon…</p>
     } @else if (errorMessage() && !isAdmin()) {
       <p class="error" role="alert">{{ errorMessage() }}</p>
-      <a routerLink="/">Retour à l’accueil</a>
     } @else if (salon(); as currentSalon) {
       <p class="salon-name">{{ currentSalon.nom }}</p>
       <div class="room-code">

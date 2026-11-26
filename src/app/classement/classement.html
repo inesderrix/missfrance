@@ -1,5 +1,6 @@
 <main class="page">
   <section class="ranking-section" aria-labelledby="ranking-title">
+    <app-page-navigation />
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Dernière étape</p>
     <h1 id="ranking-title">Classement final</h1>
@@ -12,10 +13,6 @@
         Classe les 5 finalistes : Miss France, puis les 4 dauphines.
       }
     </p>
-    @if (isAdmin()) {
-      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
-    }
-
     @if (loading()) {
       <p role="status">Chargement du classement…</p>
     } @else if (errorMessage()) {

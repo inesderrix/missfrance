@@ -1,6 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PageNavigation } from '../page-navigation/page-navigation';
 import { Candidate, CandidateRating, RoomTop12Prediction, Salon, SupabaseService } from '../supabase.service';
 
 interface PlayerPrediction {
@@ -11,7 +12,7 @@ interface PlayerPrediction {
 
 @Component({
   selector: 'app-top12',
-  imports: [RouterLink],
+  imports: [RouterLink, PageNavigation],
   templateUrl: './top12.html',
   styleUrl: './top12.css',
 })

@@ -1,5 +1,6 @@
 <main class="page">
   <section class="top12-section" aria-labelledby="top12-title">
+    <app-page-navigation />
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Étape suivante</p>
     <h1 id="top12-title">Mon Top 12</h1>
@@ -12,10 +13,6 @@
     </p>
     @if (!top12Locked()) {
       <p class="selection-count" aria-live="polite">{{ selectedIds().length }} / 12 sélectionnées</p>
-    }
-
-    @if (isAdmin()) {
-      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
     }
 
     @if (!loading() && !errorMessage() && !top12Locked()) {

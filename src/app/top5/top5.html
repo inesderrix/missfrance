@@ -1,5 +1,6 @@
 <main class="page">
   <section class="top5-section" aria-labelledby="top5-title">
+    <app-page-navigation />
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Étape suivante</p>
     <h1 id="top5-title">Mon Top 5</h1>
@@ -14,10 +15,7 @@
       <p class="selection-count" aria-live="polite">{{ selectedIds().length }} / 5 sélectionnées</p>
     }
 
-    @if (isAdmin()) {
-      <a class="admin-link" routerLink="/admin/top12">Administration du salon →</a>
-    }
-  
+
     @if (loading()) {
       <p role="status">Chargement des candidates qualifiées…</p>
     } @else if (errorMessage()) {

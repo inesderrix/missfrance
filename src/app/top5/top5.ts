@@ -1,6 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PageNavigation } from '../page-navigation/page-navigation';
 import {
   Candidate,
   CandidateRating,
@@ -16,7 +17,7 @@ interface PlayerTop5Prediction {
 
 @Component({
   selector: 'app-top5',
-  imports: [RouterLink],
+  imports: [RouterLink, PageNavigation],
   templateUrl: './top5.html',
   styleUrl: './top5.css',
 })

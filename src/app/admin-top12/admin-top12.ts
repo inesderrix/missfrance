@@ -66,6 +66,11 @@ export class AdminTop12 implements OnInit {
   readonly top12Validated = computed(() => this.officialIds().length === 12);
   readonly top5Validated = computed(() => this.officialTop5Ids().length === 5);
   readonly rankingValidated = computed(() => this.officialRanking().length === 5);
+  readonly currentStageRoute = computed(() => {
+    if (this.top5Validated()) return '/classement';
+    if (this.top12Validated()) return '/top5';
+    return '/top12';
+  });
   readonly scoreboard = computed<AdminPlayerScore[]>(() => {
     const officialTop12 = new Set(this.officialIds());
     const officialTop5 = new Set(this.officialTop5Ids());
