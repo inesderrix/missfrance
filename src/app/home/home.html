@@ -1,0 +1,44 @@
+<main class="page">
+  <section class="card" aria-labelledby="welcome-title">
+    <p class="eyebrow">Miss France · Le jeu</p>
+    <h1 id="welcome-title">Prête à jouer ?</h1>
+    <p class="intro">Crée un salon ou rejoins celui de tes amis.</p>
+
+    <label for="pseudo">Ton pseudo</label>
+    <input
+      id="pseudo"
+      name="pseudo"
+      #pseudoInput
+      type="text"
+      maxlength="30"
+      autocomplete="nickname"
+      placeholder="Ex. Camille"
+      (input)="pseudo = pseudoInput.value"
+    />
+
+    <label for="code">Code du salon</label>
+    <input
+      id="code"
+      name="code"
+      #codeInput
+      type="text"
+      maxlength="5"
+      autocomplete="off"
+      placeholder="Ex. A1B2C"
+      (input)="updateCode(codeInput.value)"
+    />
+
+    @if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    }
+
+    <div class="actions">
+      <button type="button" class="primary" [disabled]="loading()" (click)="createSalon()">
+        {{ loading() ? 'Patiente…' : 'Créer un salon' }}
+      </button>
+      <button type="button" class="secondary" [disabled]="loading()" (click)="joinSalon()">
+        Rejoindre
+      </button>
+    </div>
+  </section>
+</main>
