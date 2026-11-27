@@ -60,33 +60,7 @@
         }
       </section>
 
-      <section class="result-card scoreboard-card" aria-labelledby="scoreboard-title">
-        <h2 id="scoreboard-title">Récapitulatif des scores</h2>
-        <p class="score-rules">
-          Top 12 : 1 pt par candidate · Top 5 : 1 pt par candidate ·
-          Dauphine trouvée : 2 pts · Bonne Miss France : 5 pts
-        </p>
-        @if (scoreboard().length === 0) {
-          <p>Aucun joueur n’est enregistré dans ce salon.</p>
-        } @else {
-          <ol class="scoreboard">
-            @for (player of scoreboard(); track player.joueurId; let index = $index) {
-              <li [class.current-player]="player.joueurId === currentJoueurId">
-                <span class="score-position">{{ index + 1 }}</span>
-                <strong class="score-player">{{ player.pseudo }}</strong>
-                <span class="score-breakdown">
-                  Top 12 : {{ player.top12Points }} points ·
-                  Top 5 : {{ player.top5Points }} points ·
-                  Dauphines : {{ player.dauphinePoints }} points ·
-                  Miss France : {{ player.missFrancePoints }} points
-                </span>
-                <strong class="score-total">{{ player.total }} points</strong>
-              </li>
-            }
-          </ol>
-        }
-      </section>
-
+      <a class="next-stage-link" routerLink="/scores">Consulter le récapitulatif des scores →</a>
     } @else if (rankingLocked()) {
       <section class="result-card">
         <h2>Ton classement verrouillé</h2>

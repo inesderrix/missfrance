@@ -1,34 +1,16 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { PageNavigation } from '../page-navigation/page-navigation';
 import {
   Candidate,
   RankedCandidate,
-  RoomPlayer,
-  RoomRankPrediction,
-  RoomTop12Prediction,
   SupabaseService,
 } from '../supabase.service';
 
-interface PlayerRanking {
-  joueurId: string;
-  pseudo: string;
-  candidateIds: number[];
-}
-
-interface PlayerScore {
-  joueurId: string;
-  pseudo: string;
-  top12Points: number;
-  top5Points: number;
-  dauphinePoints: number;
-  missFrancePoints: number;
-  total: number;
-}
-
 @Component({
   selector: 'app-classement',
-  imports: [PageNavigation],
+  imports: [PageNavigation, RouterLink],
   templateUrl: './classement.html',
   styleUrl: './classement.css',
 })
@@ -41,61 +23,6 @@ export class Classement implements OnInit, OnDestroy {
   readonly officialTop12Ids = signal<number[]>([]);
   readonly rankingIds = signal<number[]>([]);
   readonly officialRanking = signal<RankedCandidate[]>([]);
-  readonly roomRankings = signal<PlayerRanking[]>([]);
-  readonly roomPlayers = signal<RoomPlayer[]>([]);
-  readonly roomTop12Predictions = signal<RoomTop12Prediction[]>([]);
-  readonly roomTop5Predictions = signal<RoomTop12Prediction[]>([]);
-  readonly scoreboard = computed<PlayerScore[]>(() => {
-    const top12ByPlayer = this.groupCandidateIds(this.roomTop12Predictions());
-    const top5ByPlayer = this.groupCandidateIds(this.roomTop5Predictions());
-    const rankingByPlayer = new Map(
-      this.roomRankings().map((ranking) => [ranking.joueurId, ranking.candidateIds]),
-    );
-    const officialTop12 = new Set(this.officialTop12Ids());
-    const officialTop5 = new Set(this.finalistIds());
-    const officialDauphines = new Set(
-      this.officialRanking().filter(({ rang }) => rang >= 2 && rang <= 5)
-        .map(({ candidate_id }) => candidate_id),
-    );
-    const officialMissFrance = this.officialRanking().find(({ rang }) => rang === 1)?.candidate_id;
-    const players = new Map(this.roomPlayers().map((player) => [player.id, player.pseudo]));
-
-    for (const prediction of [
-      ...this.roomTop12Predictions(),
-      ...this.roomTop5Predictions(),
-      ...this.roomRankings().flatMap((ranking) =>
-        ranking.candidateIds
-          .filter((candidateId) => candidateId !== undefined)
-          .map((candidate_id) => ({ joueur_id: ranking.joueurId, pseudo: ranking.pseudo, candidate_id })),
-      ),
-    ]) {
-      players.set(prediction.joueur_id, prediction.pseudo);
-    }
-
-    return [...players.entries()]
-      .map(([joueurId, pseudo]) => {
-        const top12Points = (top12ByPlayer.get(joueurId) ?? [])
-          .filter((candidateId) => officialTop12.has(candidateId)).length;
-        const top5Points = (top5ByPlayer.get(joueurId) ?? [])
-          .filter((candidateId) => officialTop5.has(candidateId)).length;
-        const rankedCandidates = rankingByPlayer.get(joueurId) ?? [];
-        const dauphinePoints =
-          rankedCandidates.filter((candidateId, index) => index > 0 && officialDauphines.has(candidateId))
-            .length * 2;
-        const missFrancePoints =
-          officialMissFrance !== undefined && rankedCandidates[0] === officialMissFrance ? 5 : 0;
-        return {
-          joueurId,
-          pseudo,
-          top12Points,
-          top5Points,
-          dauphinePoints,
-          missFrancePoints,
-          total: top12Points + top5Points + dauphinePoints + missFrancePoints,
-        };
-      })
-      .sort((a, b) => b.total - a.total || a.pseudo.localeCompare(b.pseudo, 'fr'));
-  });
   readonly draggedCandidateId = signal<number | null>(null);
   readonly salon = this.supabase.salon;
   readonly isAdmin = computed(() => {
@@ -107,10 +34,6 @@ export class Classement implements OnInit, OnDestroy {
   readonly saving = signal(false);
   readonly errorMessage = signal('');
   readonly resultsError = signal('');
-  readonly currentJoueurId = this.supabase.joueur()?.id;
-  readonly otherRankings = computed(() =>
-    this.roomRankings().filter((ranking) => ranking.joueurId !== this.currentJoueurId),
-  );
   readonly rankingLocked = computed(
     () =>
       this.salon()?.etape !== 'classement' ||
@@ -153,7 +76,6 @@ export class Classement implements OnInit, OnDestroy {
       this.officialTop12Ids.set(officialTop12.map(({ candidate_id }) => candidate_id));
       this.rankingIds.set(ranking);
       this.officialRanking.set(officialRanking);
-      if (this.rankingLocked()) await this.refreshRoomResults(salon.id);
     } catch (error) {
       console.error('Impossible de charger le classement final.', error);
       this.errorMessage.set('Impossible de charger le classement. Réessaie plus tard.');
@@ -284,7 +206,6 @@ export class Classement implements OnInit, OnDestroy {
       this.finalistIds.set(finalists.map(({ candidate_id }) => candidate_id));
       this.officialTop12Ids.set(officialTop12.map(({ candidate_id }) => candidate_id));
       this.officialRanking.set(officialRanking);
-      if (this.rankingLocked()) await this.refreshRoomResults(salon.id);
       this.resultsError.set('');
     } catch (error) {
       console.error('Impossible d’actualiser le classement final.', error);
@@ -292,41 +213,4 @@ export class Classement implements OnInit, OnDestroy {
     }
   }
 
-  private groupCandidateIds(predictions: RoomTop12Prediction[]): Map<string, number[]> {
-    const grouped = new Map<string, number[]>();
-    for (const prediction of predictions) {
-      const ids = grouped.get(prediction.joueur_id) ?? [];
-      ids.push(prediction.candidate_id);
-      grouped.set(prediction.joueur_id, ids);
-    }
-    return grouped;
-  }
-
-  private async refreshRoomResults(salonId: string) {
-    const [players, top12Predictions, top5Predictions, rankingPredictions]: [
-      RoomPlayer[],
-      RoomTop12Prediction[],
-      RoomTop12Prediction[],
-      RoomRankPrediction[],
-    ] = await Promise.all([
-      this.supabase.getRoomPlayers(salonId),
-      this.supabase.getRoomTop12Predictions(salonId),
-      this.supabase.getRoomTop5Predictions(salonId),
-      this.supabase.getRoomRankingPredictions(salonId),
-    ]);
-    this.roomPlayers.set(players);
-    this.roomTop12Predictions.set(top12Predictions);
-    this.roomTop5Predictions.set(top5Predictions);
-    const grouped = new Map<string, PlayerRanking>();
-    for (const prediction of rankingPredictions) {
-      const player = grouped.get(prediction.joueur_id) ?? {
-        joueurId: prediction.joueur_id,
-        pseudo: prediction.pseudo,
-        candidateIds: [],
-      };
-      player.candidateIds[prediction.rang - 1] = prediction.candidate_id;
-      grouped.set(prediction.joueur_id, player);
-    }
-    this.roomRankings.set([...grouped.values()]);
-  }
 }

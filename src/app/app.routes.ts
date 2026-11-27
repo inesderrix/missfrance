@@ -18,6 +18,10 @@ export const routes: Routes = [
     loadComponent: () => import('./classement/classement').then((module) => module.Classement),
   },
   {
+    path: 'scores',
+    loadComponent: () => import('./scores/scores').then((module) => module.Scores),
+  },
+  {
     path: 'admin/top12',
     loadComponent: () =>
       import('./admin-top12/admin-top12').then((module) => module.AdminTop12),

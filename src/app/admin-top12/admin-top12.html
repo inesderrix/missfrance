@@ -14,7 +14,7 @@
     </nav>
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Espace organisatrice</p>
-    <h1 id="admin-title">Administration du Top 12</h1>
+    <h1 id="admin-title">Administration</h1>
 
     @if (loading()) {
       <p role="status">Chargement du salon…</p>
@@ -29,8 +29,8 @@
       <p class="status">Statut : <strong>{{ currentSalon.statut }}</strong></p>
       <p class="status">Étape actuelle : <strong>{{ currentStageLabel() }}</strong></p>
 
-      <section class="progress-section" aria-labelledby="progress-title">
-        <h2 id="progress-title">Suivi des étapes</h2>
+      <details class="progress-section">
+        <summary><h2 id="progress-title">Suivi des étapes</h2></summary>
         <div class="progress-grid">
           <article class="progress-item">
             <span>Pronostics Top 12</span>
@@ -112,7 +112,7 @@
             </p>
           </article>
         </div>
-      </section>
+      </details>
 
       @if (errorMessage()) {
         <p class="error" role="alert">{{ errorMessage() }}</p>
@@ -148,17 +148,17 @@
           @if (officialIds().length === 12) {
             <p class="success">Le résultat officiel du Top 12 est publié.</p>
             @if (currentSalon.statut === 'verrouille') {
-              <p>Le Top 12 est validé, mais les pronostics Top 5 sont encore verrouillés.</p>
+              <p>Les bonnes réponses sont affichées. Quand tu es prête, passe tout le salon à l’étape suivante.</p>
               <button
                 type="button"
                 class="primary"
                 [disabled]="saving()"
                 (click)="reopenForTop5()"
               >
-                {{ saving() ? 'Ouverture…' : 'Ouvrir les pronostics du Top 5' }}
+                {{ saving() ? 'Passage…' : 'Passer à l’étape Top 5' }}
               </button>
             } @else {
-              <p>Les pronostics Top 12 restent verrouillés. Les joueurs peuvent maintenant saisir leur Top 5.</p>
+              <p>Le salon est passé à l’étape Top 5.</p>
             }
           } @else {
             <p>Sélectionne les 12 candidates annoncées, puis valide le résultat.</p>
@@ -225,8 +225,11 @@
           }
         </details>
 
-        <section class="predictions-section" aria-labelledby="predictions-title">
-          <h2 id="predictions-title">Pronostics des joueurs</h2>
+        <details
+          class="predictions-section"
+          [open]="currentSalon.etape === 'top12' && top12Validated()"
+        >
+          <summary><h2 id="predictions-title">Pronostics des joueurs</h2></summary>
           @if (playerPredictions().length === 0) {
             <p>Aucun joueur n’est enregistré dans ce salon.</p>
           } @else {
@@ -243,7 +246,7 @@
                         <li [class.correct-prediction]="isCorrectTop12Prediction(candidateId)">
                           <span>{{ candidate.region }}</span>
                           @if (isCorrectTop12Prediction(candidateId)) {
-                            <strong class="correct-indicator">✓ Bonne réponse</strong>
+                            <span class="correct-indicator" aria-label="Bonne réponse">✓</span>
                           }
                         </li>
                       }
@@ -253,7 +256,7 @@
               </article>
             }
           }
-        </section>
+        </details>
 
         @if (officialIds().length === 12) {
           <details
@@ -274,6 +277,19 @@
                   }
                 }
               </div>
+              @if (currentSalon.etape === 'top5' && currentSalon.statut === 'verrouille') {
+                <p>Les bonnes réponses sont affichées. Quand tu es prête, passe tout le salon à l’étape suivante.</p>
+                <button
+                  type="button"
+                  class="primary publish-button"
+                  [disabled]="saving()"
+                  (click)="reopenForRanking()"
+                >
+                  {{ saving() ? 'Passage…' : 'Passer à l’étape Classement' }}
+                </button>
+              }
+            } @else if (currentSalon.etape !== 'top5') {
+              <p>Cette étape s’ouvrira quand tu auras passé tout le salon au Top 5.</p>
             } @else {
               @if (currentSalon.statut === 'ouvert') {
                 <p>Les joueurs peuvent encore modifier leurs pronostics Top 5.</p>
@@ -329,8 +345,11 @@
           </details>
 
           @if (officialTop5Ids().length === 5 || currentSalon.statut !== 'ouvert') {
-            <section class="predictions-section" aria-labelledby="top5-predictions-title">
-              <h2 id="top5-predictions-title">Pronostics Top 5 des joueurs</h2>
+            <details
+              class="predictions-section"
+              [open]="currentSalon.etape === 'top5' && top5Validated()"
+            >
+              <summary><h2 id="top5-predictions-title">Pronostics Top 5 des joueurs</h2></summary>
               @if (top5PlayerPredictions().length === 0) {
                 <p>Aucun joueur n’est enregistré dans ce salon.</p>
               } @else {
@@ -349,7 +368,7 @@
                             <li [class.correct-prediction]="isCorrectTop5Prediction(candidateId)">
                               <span>{{ candidate.region }}</span>
                               @if (isCorrectTop5Prediction(candidateId)) {
-                                <strong class="correct-indicator">✓ Bonne réponse</strong>
+                                <span class="correct-indicator" aria-label="Bonne réponse">✓</span>
                               }
                             </li>
                           }
@@ -359,7 +378,7 @@
                   </article>
                 }
               }
-            </section>
+            </details>
           }
         }
 
@@ -370,7 +389,9 @@
             aria-labelledby="ranking-title"
           >
             <summary><h2 id="ranking-title">Classement final</h2></summary>
-            @if (rankingValidated()) {
+            @if (currentSalon.etape !== 'classement' && !rankingValidated()) {
+              <p>Cette étape s’ouvrira après le passage au classement final.</p>
+            } @else if (rankingValidated()) {
               <p class="success">Le classement officiel est publié. Le salon est terminé.</p>
               <ol class="ranking-list">
                 @for (result of officialRanking(); track result.rang) {
@@ -446,8 +467,11 @@
           </details>
 
           @if (currentSalon.statut === 'verrouille' || currentSalon.statut === 'termine') {
-            <section class="predictions-section" aria-labelledby="ranking-predictions-title">
-              <h2 id="ranking-predictions-title">Pronostics du classement des joueurs</h2>
+            <details
+              class="predictions-section"
+              [open]="currentSalon.etape === 'classement' && rankingValidated()"
+            >
+              <summary><h2 id="ranking-predictions-title">Pronostics du classement des joueurs</h2></summary>
               @if (rankingPlayerPredictions().length === 0) {
                 <p>Aucun joueur n’est enregistré dans ce salon.</p>
               } @else {
@@ -465,7 +489,7 @@
                                 <strong>{{ rankingLabel(index + 1) }}</strong> :
                                 {{ candidate.region }}
                                 @if (isCorrectRankingPrediction(selectedCandidateId, index + 1)) {
-                                  <span class="correct-indicator">✓ Bonne réponse</span>
+                                  <span class="correct-indicator" aria-label="Bonne réponse">✓</span>
                                 }
                               </li>
                             }
@@ -476,12 +500,15 @@
                   </article>
                 }
               }
-            </section>
+            </details>
           }
 
           @if (rankingValidated()) {
-            <section class="predictions-section" aria-labelledby="scoreboard-title">
-              <h2 id="scoreboard-title">Récapitulatif des points</h2>
+            <details
+              class="predictions-section"
+              [open]="currentSalon.etape === 'classement' && rankingValidated()"
+            >
+              <summary><h2 id="scoreboard-title">Récapitulatif des points</h2></summary>
               @if (scoreboard().length === 0) {
                 <p>Aucun joueur n’est enregistré dans ce salon.</p>
               } @else {
@@ -498,9 +525,9 @@
                 }
               }
               <a class="primary publish-button results-link" routerLink="/classement">
-                Consulter le classement et la gagnante
+                Consulter le classement officiel et la gagnante
               </a>
-            </section>
+            </details>
           }
         }
       }

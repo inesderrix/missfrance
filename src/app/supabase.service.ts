@@ -61,6 +61,55 @@ export interface RankedCandidate {
     rang: number;
 }
 
+export function getRankingPredictionPoints(
+    candidateId: number | undefined,
+    predictedRank: number,
+    officialRanking: RankedCandidate[],
+): number {
+    if (candidateId === undefined) return 0;
+
+    if (
+        predictedRank === 1 &&
+        officialRanking.some(({ candidate_id, rang }) => rang === 1 && candidate_id === candidateId)
+    ) {
+        return 5;
+    }
+
+    if (
+        predictedRank >= 2 &&
+        predictedRank <= 5 &&
+        officialRanking.some(
+            ({ candidate_id, rang }) =>
+                rang >= 2 && rang <= 5 && candidate_id === candidateId,
+        )
+    ) {
+        return 2;
+    }
+
+    return 0;
+}
+
+export function getRankingPoints(
+    candidateIds: number[],
+    officialRanking: RankedCandidate[],
+): { dauphinePoints: number; missFrancePoints: number } {
+    let dauphinePoints = 0;
+    let missFrancePoints = 0;
+    const scoredCandidates = new Set<number>();
+
+    for (let index = 0; index < 5; index++) {
+        const candidateId = candidateIds[index];
+        if (candidateId === undefined || scoredCandidates.has(candidateId)) continue;
+
+        const points = getRankingPredictionPoints(candidateId, index + 1, officialRanking);
+        if (points === 5) missFrancePoints += points;
+        if (points === 2) dauphinePoints += points;
+        if (points > 0) scoredCandidates.add(candidateId);
+    }
+
+    return { dauphinePoints, missFrancePoints };
+}
+
 export interface RoomRankPrediction extends RankedCandidate {
     joueur_id: string;
     pseudo: string;

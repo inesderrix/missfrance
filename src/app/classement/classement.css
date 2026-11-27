@@ -270,55 +270,6 @@ h1 {
   font-weight: 700;
 }
 
-.score-rules {
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.scoreboard {
-  display: grid;
-  gap: 8px;
-  padding: 0;
-  list-style: none;
-}
-
-.scoreboard li {
-  display: grid;
-  grid-template-columns: 36px minmax(100px, 1fr) minmax(190px, 2fr) auto;
-  align-items: center;
-  gap: 8px 14px;
-  padding: 12px;
-  border: 1px solid #ead9ad;
-  border-radius: 12px;
-  background: #fffaf0;
-}
-
-.scoreboard li.current-player {
-  border-color: #b58a32;
-  background: #fff3d4;
-}
-
-.score-position {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: 50%;
-  background: #ead9ad;
-  color: #594112;
-  font-weight: 700;
-}
-
-.score-breakdown {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.score-total {
-  color: var(--gold-dark);
-  white-space: nowrap;
-}
-
 .error {
   color: #b42318;
   text-align: center;
@@ -335,15 +286,6 @@ h1 {
 
   .player-ranking ol {
     columns: 1;
-  }
-
-  .scoreboard li {
-    grid-template-columns: 32px 1fr auto;
-    gap: 8px;
-  }
-
-  .score-breakdown {
-    grid-column: 2 / -1;
   }
 
   .editable-ranking li {

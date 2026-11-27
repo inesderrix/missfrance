@@ -1,0 +1,51 @@
+<main class="page">
+  <section class="scores-section" aria-labelledby="scores-title">
+    <nav class="page-nav" aria-label="Navigation principale">
+      <a class="nav-link" routerLink="/classement">Retour au classement final</a>
+      <a class="nav-link" routerLink="/">Accueil</a>
+    </nav>
+    <img class="brand-logo" src="/logo.webp" alt="Miss France" />
+    <p class="eyebrow">Résultats du salon</p>
+    <h1 id="scores-title">Récapitulatif des scores</h1>
+    <p class="intro">
+      Top 12 : 1 pt par candidate · Top 5 : 1 pt par candidate ·
+      Dauphine trouvée : 2 pts · Bonne Miss France : 5 pts
+    </p>
+    @if (loading()) {
+      <p role="status">Chargement des scores…</p>
+    } @else if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    } @else if (!resultsPublished()) {
+      <section class="result-card">
+        <h2>Scores en attente</h2>
+        <p>Le classement officiel n’a pas encore été publié. Les scores seront affichés ici ensuite.</p>
+      </section>
+    } @else {
+      @if (resultsError()) {
+        <p class="error" role="alert">{{ resultsError() }}</p>
+      }
+      <section class="result-card" aria-labelledby="scoreboard-title">
+        <h2 id="scoreboard-title">Classement des joueurs</h2>
+        @if (scoreboard().length === 0) {
+          <p>Aucun joueur n’est enregistré dans ce salon.</p>
+        } @else {
+          <ol class="scoreboard">
+            @for (player of scoreboard(); track player.joueurId; let index = $index) {
+              <li [class.current-player]="player.joueurId === currentJoueurId">
+                <span class="score-position">{{ index + 1 }}</span>
+                <strong class="score-player">{{ player.pseudo }}</strong>
+                <span class="score-breakdown">
+                  Top 12 : {{ player.top12Points }} points ·
+                  Top 5 : {{ player.top5Points }} points ·
+                  Dauphines : {{ player.dauphinePoints }} points ·
+                  Miss France : {{ player.missFrancePoints }} points
+                </span>
+                <strong class="score-total">{{ player.total }} points</strong>
+              </li>
+            }
+          </ol>
+        }
+      </section>
+    }
+  </section>
+</main>

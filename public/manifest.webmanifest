@@ -1,6 +1,6 @@
 {
-  "name": "miss-france-app",
-  "short_name": "miss-france-app",
+  "name": "miss france",
+  "short_name": "miss france",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",

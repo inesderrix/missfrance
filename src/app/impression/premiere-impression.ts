@@ -1,12 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { PageNavigation } from '../page-navigation/page-navigation';
 import { Candidate, CandidateRating, SupabaseService } from '../supabase.service';
 
 @Component({
   selector: 'app-premiere-impression',
-  imports: [RouterLink, PageNavigation],
+  imports: [PageNavigation],
   templateUrl: './premiere-impression.html',
   styleUrl: './premiere-impression.css',
 })

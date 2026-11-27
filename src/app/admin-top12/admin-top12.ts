@@ -11,6 +11,8 @@ import {
   RoomTop12Prediction,
   Salon,
   getSalonStageRoute,
+  getRankingPoints,
+  getRankingPredictionPoints,
   SupabaseService,
 } from '../supabase.service';
 
@@ -90,12 +92,6 @@ export class AdminTop12 implements OnInit {
   readonly scoreboard = computed<AdminPlayerScore[]>(() => {
     const officialTop12 = new Set(this.officialIds());
     const officialTop5 = new Set(this.officialTop5Ids());
-    const officialDauphines = new Set(
-      this.officialRanking()
-        .filter(({ rang }) => rang >= 2 && rang <= 5)
-        .map(({ candidate_id }) => candidate_id),
-    );
-    const officialMissFrance = this.officialRanking().find(({ rang }) => rang === 1)?.candidate_id;
     const top5ByPlayer = new Map(
       this.top5PlayerPredictions().map((player) => [player.joueurId, player.candidateIds]),
     );
@@ -109,11 +105,10 @@ export class AdminTop12 implements OnInit {
         const top5Points = (top5ByPlayer.get(player.joueurId) ?? [])
           .filter((id) => officialTop5.has(id)).length;
         const rankedCandidates = rankingByPlayer.get(player.joueurId) ?? [];
-        const dauphinePoints = rankedCandidates
-          .filter((id, index) => index > 0 && id !== undefined && officialDauphines.has(id))
-          .length * 2;
-        const missFrancePoints =
-          officialMissFrance !== undefined && rankedCandidates[0] === officialMissFrance ? 5 : 0;
+        const { dauphinePoints, missFrancePoints } = getRankingPoints(
+          rankedCandidates,
+          this.officialRanking(),
+        );
 
         return {
           ...player,
@@ -278,6 +273,7 @@ export class AdminTop12 implements OnInit {
 
   toggleTop5Candidate(candidateId: number) {
     if (
+      this.salon()?.etape !== 'top5' ||
       this.officialTop5Ids().length === 5 ||
       this.saving() ||
       !this.officialIds().includes(candidateId)
@@ -298,6 +294,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'top5' ||
       salon.statut === 'ouvert' ||
       this.officialIds().length !== 12 ||
       this.top5Ids().length !== 5 ||
@@ -317,8 +314,6 @@ export class AdminTop12 implements OnInit {
       this.officialTop5Ids.set(ids);
       this.top5Ids.set(ids);
       if (ids.length === 5) {
-        await this.supabase.openSalonForRanking(salon.id);
-        await this.supabase.refreshSalon(salon.id);
         await this.loadTop5PlayerPredictions(salon.id);
       }
     } catch (error) {
@@ -337,6 +332,7 @@ export class AdminTop12 implements OnInit {
 
   addRankingCandidate(candidateId: number) {
     if (
+      this.salon()?.etape !== 'classement' ||
       this.saving() ||
       this.rankingValidated() ||
       !this.officialTop5Ids().includes(candidateId) ||
@@ -349,12 +345,12 @@ export class AdminTop12 implements OnInit {
   }
 
   removeRankingCandidate(candidateId: number) {
-    if (this.saving() || this.rankingValidated()) return;
+    if (this.salon()?.etape !== 'classement' || this.saving() || this.rankingValidated()) return;
     this.rankingIds.update((ids) => ids.filter((id) => id !== candidateId));
   }
 
   startRankingDrag(candidateId: number) {
-    if (this.saving() || this.rankingValidated()) return;
+    if (this.salon()?.etape !== 'classement' || this.saving() || this.rankingValidated()) return;
     this.draggedRankingCandidateId.set(candidateId);
   }
 
@@ -369,7 +365,12 @@ export class AdminTop12 implements OnInit {
   dropRankingCandidate(targetCandidateId: number) {
     const draggedCandidateId = this.draggedRankingCandidateId();
     this.draggedRankingCandidateId.set(null);
-    if (!draggedCandidateId || draggedCandidateId === targetCandidateId || this.saving()) return;
+    if (
+      !draggedCandidateId ||
+      draggedCandidateId === targetCandidateId ||
+      this.salon()?.etape !== 'classement' ||
+      this.saving()
+    ) return;
 
     const ids = [...this.rankingIds()];
     const sourceIndex = ids.indexOf(draggedCandidateId);
@@ -382,7 +383,7 @@ export class AdminTop12 implements OnInit {
   }
 
   moveRankingCandidate(candidateId: number, direction: -1 | 1) {
-    if (this.saving()) return;
+    if (this.salon()?.etape !== 'classement' || this.saving()) return;
     const ids = [...this.rankingIds()];
     const sourceIndex = ids.indexOf(candidateId);
     const targetIndex = sourceIndex + direction;
@@ -398,6 +399,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'classement' ||
       salon.statut !== 'ouvert' ||
       !this.top5Validated() ||
       this.locking()
@@ -427,6 +429,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'top5' ||
       salon.statut !== 'verrouille' ||
       !this.top5Validated() ||
       this.saving()
@@ -454,6 +457,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'classement' ||
       salon.statut !== 'verrouille' ||
       this.rankingIds().length !== 5 ||
       this.rankingValidated() ||
@@ -487,6 +491,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'top5' ||
       salon.statut !== 'ouvert' ||
       !this.top12Validated() ||
       this.locking()
@@ -519,6 +524,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'top12' ||
       salon.statut !== 'verrouille' ||
       this.selectedIds().length !== 12 ||
       this.saving()
@@ -535,8 +541,7 @@ export class AdminTop12 implements OnInit {
       const officialIds = officialResults.map(({ candidate_id }) => candidate_id);
       this.officialIds.set(officialIds);
       if (officialIds.length === 12) {
-        await this.supabase.openSalonForTop5(salon.id);
-        await this.supabase.refreshSalon(salon.id);
+        await this.loadPlayerPredictions(salon.id);
       }
     } catch (error) {
       console.error('Impossible de valider le Top 12 officiel.', error);
@@ -553,6 +558,7 @@ export class AdminTop12 implements OnInit {
     if (
       !salon ||
       !this.isAdmin() ||
+      salon.etape !== 'top12' ||
       salon.statut !== 'verrouille' ||
       !this.top12Validated() ||
       this.saving()
@@ -614,19 +620,9 @@ export class AdminTop12 implements OnInit {
   }
 
   isCorrectRankingPrediction(candidateId: number, rank: number): boolean {
-    if (!this.rankingValidated()) return false;
-    if (rank === 1) {
-      return this.officialRanking().some(
-        (result) => result.rang === 1 && result.candidate_id === candidateId,
-      );
-    }
-
     return (
-      rank >= 2 &&
-      rank <= 5 &&
-      this.officialRanking().some(
-        (result) => result.rang >= 2 && result.rang <= 5 && result.candidate_id === candidateId,
-      )
+      this.rankingValidated() &&
+      getRankingPredictionPoints(candidateId, rank, this.officialRanking()) > 0
     );
   }
 
