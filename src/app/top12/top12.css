@@ -235,6 +235,17 @@ h1 {
   border-radius: 8px;
 }
 
+.recap-list li.correct-answer {
+  background: #e7f3df;
+  color: #315d2b;
+}
+
+.correct-indicator {
+  margin-left: 6px;
+  color: #315d2b;
+  font-weight: 700;
+}
+
 .results-section h2 {
   color: var(--gold-dark);
 }

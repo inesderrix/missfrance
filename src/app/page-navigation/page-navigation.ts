@@ -41,8 +41,11 @@ export class PageNavigation implements OnInit, OnDestroy {
     this.refreshing = true;
     try {
       const currentSalon = await this.supabase.refreshSalon(salon.id);
+      const currentRoute = this.router.url.split(/[?#]/, 1)[0];
+      if (currentRoute === '/scores') return;
+
       const route = getSalonStageRoute(currentSalon.etape);
-      if (this.router.url.split(/[?#]/, 1)[0] !== route) {
+      if (currentRoute !== route) {
         await this.router.navigateByUrl(route);
       }
     } catch (error) {

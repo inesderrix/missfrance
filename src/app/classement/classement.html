@@ -28,9 +28,12 @@
           <ol class="ranking-list">
             @for (candidateId of rankingIds(); track candidateId; let index = $index) {
               @if (getCandidate(candidateId); as candidate) {
-                <li>
+                <li [class.correct-answer]="isCorrectRank(candidateId, index + 1)">
                   <strong>{{ rankLabel(index + 1) }}</strong>
                   <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
+                  @if (isCorrectRank(candidateId, index + 1)) {
+                    <span class="correct-indicator" aria-label="Bonne réponse">✓</span>
+                  }
                 </li>
               }
             }

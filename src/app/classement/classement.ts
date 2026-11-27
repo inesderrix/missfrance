@@ -63,7 +63,7 @@ export class Classement implements OnInit, OnDestroy {
     }
 
     try {
-      await this.supabase.refreshSalon(salon.id);
+      const currentSalon = await this.supabase.refreshSalon(salon.id);
       const [candidates, finalists, officialTop12, ranking, officialRanking] = await Promise.all([
         this.supabase.getCandidates(),
         this.supabase.getOfficialTop5(salon.id),
@@ -76,6 +76,17 @@ export class Classement implements OnInit, OnDestroy {
       this.officialTop12Ids.set(officialTop12.map(({ candidate_id }) => candidate_id));
       this.rankingIds.set(ranking);
       this.officialRanking.set(officialRanking);
+      const finalistIds = finalists.map(({ candidate_id }) => candidate_id);
+      if (
+        ranking.length === 0 &&
+        finalistIds.length === 5 &&
+        new Set(finalistIds).size === 5 &&
+        currentSalon.etape === 'classement' &&
+        currentSalon.statut === 'ouvert' &&
+        officialRanking.length !== 5
+      ) {
+        await this.persistRanking(finalistIds);
+      }
     } catch (error) {
       console.error('Impossible de charger le classement final.', error);
       this.errorMessage.set('Impossible de charger le classement. Réessaie plus tard.');
@@ -122,6 +133,12 @@ export class Classement implements OnInit, OnDestroy {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
     return `/img/460x0_miss-${regionSlug}-2026.webp`;
+  }
+
+  isCorrectRank(candidateId: number, rank: number): boolean {
+    return this.officialRanking().some(
+      (result) => result.candidate_id === candidateId && result.rang === rank,
+    );
   }
 
   startDragging(candidateId: number) {

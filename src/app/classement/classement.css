@@ -162,6 +162,16 @@ h1 {
   color: var(--gold-dark);
 }
 
+.ranking-list li.correct-answer {
+  background: #e7f3df;
+  color: #315d2b;
+}
+
+.correct-indicator {
+  color: #315d2b;
+  font-weight: 700;
+}
+
 .editable-ranking {
   padding: 0;
   list-style: none;

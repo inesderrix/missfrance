@@ -30,8 +30,11 @@
         } @else {
           <ul class="recap-list">
             @for (candidate of selectedCandidates(); track candidate.id) {
-              <li>
+              <li [class.correct-answer]="officialIds().includes(candidate.id)">
                 <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
+                @if (officialIds().includes(candidate.id)) {
+                  <span class="correct-indicator" aria-label="Bonne réponse">✓</span>
+                }
               </li>
             }
           </ul>
