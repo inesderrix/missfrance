@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   Candidate,
   OfficialTop12Candidate,
@@ -10,6 +10,7 @@ import {
   RoomRankPrediction,
   RoomTop12Prediction,
   Salon,
+  getSalonStageRoute,
   SupabaseService,
 } from '../supabase.service';
 
@@ -41,6 +42,7 @@ interface AdminPlayerScore extends PlayerPrediction {
 })
 export class AdminTop12 implements OnInit {
   private readonly supabase = inject(SupabaseService);
+  private readonly route = inject(ActivatedRoute);
   private readonly platformId = inject(PLATFORM_ID);
   readonly candidates = signal<Candidate[]>([]);
   readonly selectedIds = signal<number[]>([]);
@@ -66,10 +68,24 @@ export class AdminTop12 implements OnInit {
   readonly top12Validated = computed(() => this.officialIds().length === 12);
   readonly top5Validated = computed(() => this.officialTop5Ids().length === 5);
   readonly rankingValidated = computed(() => this.officialRanking().length === 5);
-  readonly currentStageRoute = computed(() => {
-    if (this.top5Validated()) return '/classement';
-    if (this.top12Validated()) return '/top5';
-    return '/top12';
+  readonly currentStageRoute = computed(() =>
+    getSalonStageRoute(this.salon()?.etape ?? 'premiere_impression'),
+  );
+  readonly currentStageLabel = computed(
+    () =>
+      ({
+        premiere_impression: 'Première impression',
+        top12: 'Top 12',
+        top5: 'Top 5',
+        classement: 'Classement final',
+      })[this.salon()?.etape ?? 'premiere_impression'],
+  );
+  readonly returnRoute = computed(() => {
+    const requestedRoute = this.route.snapshot.queryParamMap.get('retour');
+    const playerRoutes = ['/premiere-impression', '/top12', '/top5', '/classement'];
+    return playerRoutes.includes(requestedRoute ?? '')
+      ? requestedRoute ?? this.currentStageRoute()
+      : this.currentStageRoute();
   });
   readonly scoreboard = computed<AdminPlayerScore[]>(() => {
     const officialTop12 = new Set(this.officialIds());
@@ -187,6 +203,32 @@ export class AdminTop12 implements OnInit {
 
   updateSearch(value: string) {
     this.search.set(value);
+  }
+
+  async advanceToTop12() {
+    const salon = this.salon();
+    if (
+      !salon ||
+      !this.isAdmin() ||
+      salon.etape !== 'premiere_impression' ||
+      this.saving()
+    ) {
+      return;
+    }
+
+    this.errorMessage.set('');
+    this.saving.set(true);
+    try {
+      await this.supabase.advanceSalonToTop12(salon.id);
+      await this.supabase.refreshSalon(salon.id);
+    } catch (error) {
+      console.error('Impossible de passer le salon au Top 12.', error);
+      this.errorMessage.set(
+        error instanceof Error ? error.message : 'Le passage au Top 12 a échoué.',
+      );
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   isSelected(candidateId: number): boolean {
@@ -561,6 +603,31 @@ export class AdminTop12 implements OnInit {
 
   getCandidate(candidateId: number): Candidate | undefined {
     return this.candidates().find((candidate) => candidate.id === candidateId);
+  }
+
+  isCorrectTop12Prediction(candidateId: number): boolean {
+    return this.officialIds().length === 12 && this.officialIds().includes(candidateId);
+  }
+
+  isCorrectTop5Prediction(candidateId: number): boolean {
+    return this.officialTop5Ids().length === 5 && this.officialTop5Ids().includes(candidateId);
+  }
+
+  isCorrectRankingPrediction(candidateId: number, rank: number): boolean {
+    if (!this.rankingValidated()) return false;
+    if (rank === 1) {
+      return this.officialRanking().some(
+        (result) => result.rang === 1 && result.candidate_id === candidateId,
+      );
+    }
+
+    return (
+      rank >= 2 &&
+      rank <= 5 &&
+      this.officialRanking().some(
+        (result) => result.rang >= 2 && result.rang <= 5 && result.candidate_id === candidateId,
+      )
+    );
   }
 
   rankingLabel(rank: number): string {

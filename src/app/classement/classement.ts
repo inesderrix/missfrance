@@ -112,7 +112,10 @@ export class Classement implements OnInit, OnDestroy {
     this.roomRankings().filter((ranking) => ranking.joueurId !== this.currentJoueurId),
   );
   readonly rankingLocked = computed(
-    () => this.salon()?.statut !== 'ouvert' || this.officialRanking().length === 5,
+    () =>
+      this.salon()?.etape !== 'classement' ||
+      this.salon()?.statut !== 'ouvert' ||
+      this.officialRanking().length === 5,
   );
   readonly editableRankingIds = computed(() => {
     const savedIds = this.rankingIds();

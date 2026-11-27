@@ -8,7 +8,7 @@
       @if (!top12Locked()) {
         Choisis les 12 candidates que tu préfères. Elles sont classées par tes notes, de la meilleure note à la moins élevée.
       } @else {
-        Les pronostics Top 12 sont verrouillés. Ils sont maintenant visibles par les joueurs.
+        Les pronostics Top 12 sont verrouillés. En attente des résultats officiels.
       }
     </p>
     @if (!top12Locked()) {
@@ -69,19 +69,6 @@
           </div>
         }
 
-        @if (otherPlayerPredictions().length > 0) {
-          <h3>Pronostics des joueurs</h3>
-          @for (player of otherPlayerPredictions(); track player.joueurId) {
-            <article class="player-result">
-              <strong>{{ player.pseudo }}</strong>
-              @if (officialIds().length === 12) {
-                <span>{{ getHitCount(player.candidateIds) }} / 12 bonnes réponses — régions : <strong>{{ getCandidateRegions(player.candidateIds) || 'aucune sélection' }}</strong></span>
-              } @else {
-                <span>{{ player.candidateIds.length }} candidates — régions : <strong>{{ getCandidateRegions(player.candidateIds) || 'aucune sélection' }}</strong></span>
-              }
-            </article>
-          }
-        }
       </section>
       @if (officialIds().length === 12) {
         <a class="next-stage-link" routerLink="/top5">Passer à l’étape Top 5 →</a>

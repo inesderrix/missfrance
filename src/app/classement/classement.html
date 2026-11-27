@@ -87,23 +87,6 @@
         }
       </section>
 
-      @if (otherRankings().length > 0) {
-        <section class="result-card">
-          <h2>Classements des autres joueurs</h2>
-          @for (player of otherRankings(); track player.joueurId) {
-            <article class="player-ranking">
-              <strong>{{ player.pseudo }}</strong>
-              <ol>
-                @for (candidateId of player.candidateIds; track $index; let index = $index) {
-                  @if (getCandidate(candidateId); as candidate) {
-                    <li>{{ rankLabel(index + 1) }} : {{ candidate.region }}</li>
-                  }
-                }
-              </ol>
-            </article>
-          }
-        </section>
-      }
     } @else if (rankingLocked()) {
       <section class="result-card">
         <h2>Ton classement verrouillé</h2>

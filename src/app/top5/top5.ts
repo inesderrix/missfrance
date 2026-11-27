@@ -37,7 +37,10 @@ export class Top5 implements OnInit, OnDestroy {
     return !!salon && !!joueur && salon.admin_id === joueur.user_id;
   });
   readonly top5Locked = computed(
-    () => this.salon()?.statut !== 'ouvert' || this.officialIds().length === 5,
+    () =>
+      this.salon()?.etape !== 'top5' ||
+      this.salon()?.statut !== 'ouvert' ||
+      this.officialIds().length === 5,
   );
   readonly predictions = signal<PlayerTop5Prediction[]>([]);
   readonly loading = signal(true);

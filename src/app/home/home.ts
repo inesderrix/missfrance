@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { SupabaseService } from '../supabase.service';
+import { getSalonStageRoute, SupabaseService } from '../supabase.service';
 
 @Component({
   selector: 'app-home',
@@ -21,7 +21,7 @@ export class Home {
   }
 
   async createSalon() {
-    await this.enterSalon(() => this.supabase.createSalon(this.pseudo.trim()), false);
+    await this.enterSalon(() => this.supabase.createSalon(this.pseudo.trim()));
   }
 
   async joinSalon() {
@@ -30,10 +30,7 @@ export class Home {
       return;
     }
 
-    await this.enterSalon(
-      () => this.supabase.joinSalon(this.code.trim(), this.pseudo.trim()),
-      true,
-    );
+    await this.enterSalon(() => this.supabase.joinSalon(this.code.trim(), this.pseudo.trim()));
   }
 
   async reconnect() {
@@ -54,7 +51,7 @@ export class Home {
     }
   }
 
-  private async enterSalon(action: () => Promise<unknown>, continueToCurrentStage: boolean) {
+  private async enterSalon(action: () => Promise<unknown>) {
     this.errorMessage.set('');
     if (!this.pseudo.trim()) {
       this.errorMessage.set('Entre ton pseudo pour continuer.');
@@ -64,11 +61,7 @@ export class Home {
     this.loading.set(true);
     try {
       await action();
-      if (continueToCurrentStage) {
-        await this.navigateToCurrentStage();
-      } else {
-        await this.router.navigateByUrl('/premiere-impression');
-      }
+      await this.navigateToCurrentStage();
     } catch (error) {
       console.error('Impossible de rejoindre le salon.', error);
       this.errorMessage.set(
@@ -88,17 +81,6 @@ export class Home {
     }
 
     const currentSalon = await this.supabase.refreshSalon(salon.id);
-    const [top12, top5, ranking] = await Promise.all([
-      this.supabase.getOfficialTop12(currentSalon.id),
-      this.supabase.getOfficialTop5(currentSalon.id),
-      this.supabase.getOfficialRanking(currentSalon.id),
-    ]);
-
-    const route = ranking.length === 5 || top5.length === 5
-      ? '/classement'
-      : top12.length === 12
-        ? '/top5'
-        : '/top12';
-    await this.router.navigateByUrl(route);
+    await this.router.navigateByUrl(getSalonStageRoute(currentSalon.etape));
   }
 }

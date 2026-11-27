@@ -1,7 +1,7 @@
 <main class="page">
   <section class="admin-section" aria-labelledby="admin-title">
     <nav class="page-nav" aria-label="Navigation principale">
-      <a class="icon-link" [routerLink]="currentStageRoute()" aria-label="Retour à l’étape en cours" title="Étape en cours">
+      <a class="icon-link" [routerLink]="returnRoute()" aria-label="Retour à la page précédente" title="Retour">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m14 5-7 7 7 7M7 12h13" />
         </svg>
@@ -27,6 +27,7 @@
         <strong>{{ currentSalon.code }}</strong>
       </div>
       <p class="status">Statut : <strong>{{ currentSalon.statut }}</strong></p>
+      <p class="status">Étape actuelle : <strong>{{ currentStageLabel() }}</strong></p>
 
       <section class="progress-section" aria-labelledby="progress-title">
         <h2 id="progress-title">Suivi des étapes</h2>
@@ -117,17 +118,33 @@
         <p class="error" role="alert">{{ errorMessage() }}</p>
       }
 
-      @if (!predictionsLocked()) {
-        <section class="stage-card">
-          <h2>Avant l’émission</h2>
+      @if (currentSalon.etape === 'premiere_impression') {
+        <details class="stage-card" [open]="currentSalon.etape === 'premiere_impression'">
+          <summary><h2>Première impression</h2></summary>
+          <p>
+            Les joueurs peuvent découvrir et noter les candidates. Quand tout le monde est prêt,
+            fais passer le salon au Top 12.
+          </p>
+          <button
+            type="button"
+            class="primary"
+            [disabled]="saving()"
+            (click)="advanceToTop12()"
+          >
+            {{ saving() ? 'Passage au Top 12…' : 'Passer tout le monde au Top 12' }}
+          </button>
+        </details>
+      } @else if (!predictionsLocked()) {
+        <details class="stage-card" [open]="currentSalon.etape === 'top12'">
+          <summary><h2>Avant l’émission</h2></summary>
           <p>Verrouille les pronostics avant l’annonce du Top 12. Les joueurs ne pourront plus modifier leurs choix.</p>
           <button type="button" class="primary" [disabled]="locking()" (click)="lockPredictions()">
             {{ locking() ? 'Verrouillage…' : 'Verrouiller les pronostics' }}
           </button>
-        </section>
+        </details>
       } @else {
-        <section class="stage-card">
-          <h2>Top 12 annoncé</h2>
+        <details class="stage-card" [open]="currentSalon.etape === 'top12'">
+          <summary><h2>Top 12 annoncé</h2></summary>
           @if (officialIds().length === 12) {
             <p class="success">Le résultat officiel du Top 12 est publié.</p>
             @if (currentSalon.statut === 'verrouille') {
@@ -206,7 +223,7 @@
               }
             </div>
           }
-        </section>
+        </details>
 
         <section class="predictions-section" aria-labelledby="predictions-title">
           <h2 id="predictions-title">Pronostics des joueurs</h2>
@@ -219,7 +236,19 @@
                 @if (player.candidateIds.length === 0) {
                   <p>Aucun pronostic Top 12 enregistré.</p>
                 } @else {
-                  <p>{{ player.candidateIds.length }} candidate(s) — régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong></p>
+                  <p>{{ player.candidateIds.length }} candidate(s) :</p>
+                  <ul class="prediction-candidate-list">
+                    @for (candidateId of player.candidateIds; track candidateId) {
+                      @if (getCandidate(candidateId); as candidate) {
+                        <li [class.correct-prediction]="isCorrectTop12Prediction(candidateId)">
+                          <span>{{ candidate.region }}</span>
+                          @if (isCorrectTop12Prediction(candidateId)) {
+                            <strong class="correct-indicator">✓ Bonne réponse</strong>
+                          }
+                        </li>
+                      }
+                    }
+                  </ul>
                 }
               </article>
             }
@@ -227,8 +256,12 @@
         </section>
 
         @if (officialIds().length === 12) {
-          <section class="stage-card" aria-labelledby="top5-title">
-            <h2 id="top5-title">Top 5 annoncé</h2>
+          <details
+            class="stage-card"
+            [open]="currentSalon.etape === 'top5'"
+            aria-labelledby="top5-title"
+          >
+            <summary><h2 id="top5-title">Top 5 annoncé</h2></summary>
             @if (officialTop5Ids().length === 5) {
               <p class="success">Le résultat officiel du Top 5 est publié.</p>
               <div class="official-grid">
@@ -293,7 +326,7 @@
                 </button>
               }
             }
-          </section>
+          </details>
 
           @if (officialTop5Ids().length === 5 || currentSalon.statut !== 'ouvert') {
             <section class="predictions-section" aria-labelledby="top5-predictions-title">
@@ -308,9 +341,20 @@
                       <p>Aucun pronostic Top 5 enregistré.</p>
                     } @else {
                       <p>
-                        {{ player.candidateIds.length }} candidate(s) —
-                        régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong>
+                        {{ player.candidateIds.length }} candidate(s) :
                       </p>
+                      <ul class="prediction-candidate-list">
+                        @for (candidateId of player.candidateIds; track candidateId) {
+                          @if (getCandidate(candidateId); as candidate) {
+                            <li [class.correct-prediction]="isCorrectTop5Prediction(candidateId)">
+                              <span>{{ candidate.region }}</span>
+                              @if (isCorrectTop5Prediction(candidateId)) {
+                                <strong class="correct-indicator">✓ Bonne réponse</strong>
+                              }
+                            </li>
+                          }
+                        }
+                      </ul>
                     }
                   </article>
                 }
@@ -320,8 +364,12 @@
         }
 
         @if (top5Validated()) {
-          <section class="stage-card" aria-labelledby="ranking-title">
-            <h2 id="ranking-title">Classement final</h2>
+          <details
+            class="stage-card"
+            [open]="currentSalon.etape === 'classement'"
+            aria-labelledby="ranking-title"
+          >
+            <summary><h2 id="ranking-title">Classement final</h2></summary>
             @if (rankingValidated()) {
               <p class="success">Le classement officiel est publié. Le salon est terminé.</p>
               <ol class="ranking-list">
@@ -395,7 +443,7 @@
                 {{ saving() ? 'Publication…' : 'Valider le classement officiel' }}
               </button>
             }
-          </section>
+          </details>
 
           @if (currentSalon.statut === 'verrouille' || currentSalon.statut === 'termine') {
             <section class="predictions-section" aria-labelledby="ranking-predictions-title">
@@ -413,9 +461,12 @@
                         @for (candidateId of player.candidateIds; track $index; let index = $index) {
                           @if (candidateId; as selectedCandidateId) {
                             @if (getCandidate(selectedCandidateId); as candidate) {
-                              <li>
+                              <li [class.correct-prediction]="isCorrectRankingPrediction(selectedCandidateId, index + 1)">
                                 <strong>{{ rankingLabel(index + 1) }}</strong> :
                                 {{ candidate.region }}
+                                @if (isCorrectRankingPrediction(selectedCandidateId, index + 1)) {
+                                  <span class="correct-indicator">✓ Bonne réponse</span>
+                                }
                               </li>
                             }
                           }
@@ -446,6 +497,9 @@
                   </article>
                 }
               }
+              <a class="primary publish-button results-link" routerLink="/classement">
+                Consulter le classement et la gagnante
+              </a>
             </section>
           }
         }

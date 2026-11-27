@@ -41,7 +41,10 @@ export class Top12 implements OnInit, OnDestroy {
   readonly resultsError = signal('');
   readonly search = signal('');
   readonly top12Locked = computed(
-    () => this.salon()?.statut !== 'ouvert' || this.officialIds().length === 12,
+    () =>
+      this.salon()?.etape !== 'top12' ||
+      this.salon()?.statut !== 'ouvert' ||
+      this.officialIds().length === 12,
   );
 
   readonly sortedCandidates = computed(() => {

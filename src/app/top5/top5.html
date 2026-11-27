@@ -57,17 +57,6 @@
         }
       </section>
 
-      @if (otherPredictions().length > 0) {
-        <section class="official-section">
-          <h2>Pronostics des autres joueurs</h2>
-          @for (player of otherPredictions(); track player.joueurId) {
-            <article class="player-result">
-              <strong>{{ player.pseudo }}</strong>
-              <span>{{ getHitCount(player.candidateIds) }} / 5 bonnes réponses — régions : <strong>{{ getCandidateRegions(player.candidateIds) }}</strong></span>
-            </article>
-          }
-        </section>
-      }
       <a class="next-stage-link" routerLink="/classement">Passer au classement final →</a>
     } @else if (top5Locked()) {
       <section class="recap-section">

@@ -9,6 +9,18 @@ export interface Salon {
     nom: string;
     admin_id: string;
     statut: 'ouvert' | 'verrouille' | 'termine';
+    etape: SalonStage;
+}
+
+export type SalonStage = 'premiere_impression' | 'top12' | 'top5' | 'classement';
+
+export function getSalonStageRoute(etape: SalonStage): string {
+    return {
+        premiere_impression: '/premiere-impression',
+        top12: '/top12',
+        top5: '/top5',
+        classement: '/classement',
+    }[etape];
 }
 
 export interface Joueur {
@@ -192,12 +204,31 @@ export class SupabaseService {
             .from('salons')
             .update({ statut: 'verrouille' })
             .eq('id', salonId)
+            .eq('etape', 'top12')
             .eq('statut', 'ouvert')
             .select('id')
             .maybeSingle();
         if (error) throw error;
         if (!data) throw new Error('Le salon n’a pas pu être verrouillé. Vérifie les droits et son statut.');
         this.updateStoredSalonStatus('verrouille');
+    }
+
+    async advanceSalonToTop12(salonId: string) {
+        const joueur = this.joueur();
+        if (!joueur) throw new Error('Rejoins le salon avant de changer son étape.');
+
+        const { data, error } = await this.client
+            .from('salons')
+            .update({ etape: 'top12' })
+            .eq('id', salonId)
+            .eq('admin_id', joueur.user_id)
+            .eq('etape', 'premiere_impression')
+            .eq('statut', 'ouvert')
+            .select('id')
+            .maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error('Le salon n’a pas pu passer au Top 12. Vérifie tes droits et son étape.');
+        this.updateStoredSalon({ etape: 'top12' });
     }
 
     async openSalonForTop5(salonId: string) {
@@ -208,8 +239,9 @@ export class SupabaseService {
 
         const { data, error } = await this.client
             .from('salons')
-            .update({ statut: 'ouvert' })
+            .update({ statut: 'ouvert', etape: 'top5' })
             .eq('id', salonId)
+            .eq('etape', 'top12')
             .eq('statut', 'verrouille')
             .select('id')
             .maybeSingle();
@@ -217,7 +249,7 @@ export class SupabaseService {
         if (!data) {
             throw new Error('Le salon n’a pas pu être rouvert pour le Top 5. Vérifie ses droits et son statut.');
         }
-        this.updateStoredSalonStatus('ouvert');
+        this.updateStoredSalon({ statut: 'ouvert', etape: 'top5' });
     }
 
     async lockSalonForTop5(salonId: string) {
@@ -230,6 +262,7 @@ export class SupabaseService {
             .from('salons')
             .update({ statut: 'verrouille' })
             .eq('id', salonId)
+            .eq('etape', 'top5')
             .eq('statut', 'ouvert')
             .select('id')
             .maybeSingle();
@@ -248,8 +281,9 @@ export class SupabaseService {
 
         const { data, error } = await this.client
             .from('salons')
-            .update({ statut: 'ouvert' })
+            .update({ statut: 'ouvert', etape: 'classement' })
             .eq('id', salonId)
+            .eq('etape', 'top5')
             .eq('statut', 'verrouille')
             .select('id')
             .maybeSingle();
@@ -257,7 +291,7 @@ export class SupabaseService {
         if (!data) {
             throw new Error('Le salon n’a pas pu être rouvert pour le classement. Vérifie ses droits et son statut.');
         }
-        this.updateStoredSalonStatus('ouvert');
+        this.updateStoredSalon({ statut: 'ouvert', etape: 'classement' });
     }
 
     async lockSalonForRanking(salonId: string) {
@@ -270,6 +304,7 @@ export class SupabaseService {
             .from('salons')
             .update({ statut: 'verrouille' })
             .eq('id', salonId)
+            .eq('etape', 'classement')
             .eq('statut', 'ouvert')
             .select('id')
             .maybeSingle();
@@ -285,6 +320,7 @@ export class SupabaseService {
             .from('salons')
             .update({ statut: 'termine' })
             .eq('id', salonId)
+            .eq('etape', 'classement')
             .eq('statut', 'verrouille')
             .select('id')
             .maybeSingle();
@@ -292,13 +328,13 @@ export class SupabaseService {
         if (!data) {
             throw new Error('Le salon n’a pas pu être terminé. Vérifie ses droits et son statut.');
         }
-        this.updateStoredSalonStatus('termine');
+        this.updateStoredSalon({ statut: 'termine' });
     }
 
     async refreshSalon(salonId: string): Promise<Salon> {
         const { data, error } = await this.client
             .from('salons')
-            .select('id, code, nom, admin_id, statut')
+            .select('id, code, nom, admin_id, statut, etape')
             .eq('id', salonId)
             .single();
         if (error) throw error;
@@ -566,9 +602,13 @@ export class SupabaseService {
     }
 
     private updateStoredSalonStatus(statut: Salon['statut']) {
+        this.updateStoredSalon({ statut });
+    }
+
+    private updateStoredSalon(update: Partial<Pick<Salon, 'statut' | 'etape'>>) {
         const salon = this.salon();
         if (!salon) return;
-        const updatedSalon = { ...salon, statut };
+        const updatedSalon = { ...salon, ...update };
         this.salon.set(updatedSalon);
         this.persistSalon(updatedSalon);
     }
