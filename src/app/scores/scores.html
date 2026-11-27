@@ -1,9 +1,6 @@
 <main class="page">
   <section class="scores-section" aria-labelledby="scores-title">
-    <nav class="page-nav" aria-label="Navigation principale">
-      <a class="nav-link" routerLink="/classement">Retour au classement final</a>
-      <a class="nav-link" routerLink="/">Accueil</a>
-    </nav>
+    <app-page-navigation />
     <img class="brand-logo" src="/logo.webp" alt="Miss France" />
     <p class="eyebrow">Résultats du salon</p>
     <h1 id="scores-title">Récapitulatif des scores</h1>
@@ -35,10 +32,10 @@
                 <span class="score-position">{{ index + 1 }}</span>
                 <strong class="score-player">{{ player.pseudo }}</strong>
                 <span class="score-breakdown">
-                  Top 12 : {{ player.top12Points }} points ·
-                  Top 5 : {{ player.top5Points }} points ·
-                  Dauphines : {{ player.dauphinePoints }} points ·
-                  Miss France : {{ player.missFrancePoints }} points
+                  <span>Top 12 : {{ player.top12Points }} points</span>
+                  <span>Top 5 : {{ player.top5Points }} points</span>
+                  <span>Dauphines : {{ player.dauphinePoints }} points</span>
+                  <span>Miss France : {{ player.missFrancePoints }} points</span>
                 </span>
                 <strong class="score-total">{{ player.total }} points</strong>
               </li>

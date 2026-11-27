@@ -19,22 +19,6 @@
   margin: 0 auto;
 }
 
-.page-nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.nav-link {
-  padding: 10px 14px;
-  border: 1px solid #c7a250;
-  border-radius: 10px;
-  background: #fffefa;
-  color: var(--gold-dark);
-  font-weight: 700;
-  text-decoration: none;
-}
-
 .brand-logo {
   display: block;
   width: min(100%, 190px);
@@ -119,8 +103,12 @@ h1 {
 }
 
 .score-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   color: var(--muted);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .score-total {
@@ -133,7 +121,7 @@ h1 {
   text-align: center;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .page {
     padding: 24px 16px 48px;
   }
@@ -143,11 +131,14 @@ h1 {
   }
 
   .scoreboard li {
-    grid-template-columns: 32px 1fr auto;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
     gap: 8px;
   }
 
   .score-breakdown {
     grid-column: 2 / -1;
+    display: grid;
+    gap: 4px;
+    white-space: normal;
   }
 }

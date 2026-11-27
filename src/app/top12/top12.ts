@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { PageNavigation } from '../page-navigation/page-navigation';
 import { Candidate, CandidateRating, RoomTop12Prediction, Salon, SupabaseService } from '../supabase.service';
 
@@ -12,7 +11,7 @@ interface PlayerPrediction {
 
 @Component({
   selector: 'app-top12',
-  imports: [RouterLink, PageNavigation],
+  imports: [PageNavigation],
   templateUrl: './top12.html',
   styleUrl: './top12.css',
 })
@@ -186,11 +185,6 @@ export class Top12 implements OnInit, OnDestroy {
       grouped.set(prediction.joueur_id, player);
     }
     return [...grouped.values()];
-  }
-
-  getHitCount(candidateIds: number[]): number {
-    const officialIds = new Set(this.officialIds());
-    return candidateIds.filter((candidateId) => officialIds.has(candidateId)).length;
   }
 
   getCandidateRegions(candidateIds: number[]): string {

@@ -5,7 +5,7 @@
     <p class="eyebrow">Étape suivante</p>
     <h1 id="top5-title">Mon Top 5</h1>
     @if (officialIds().length === 5) {
-      <p class="intro">Le résultat officiel est annoncé. Voici ton score et les bonnes réponses.</p>
+      <p class="intro">Le résultat officiel est annoncé.</p>
     } @else if (top5Locked() && qualifiedIds().length === 12) {
       <p class="intro">Les pronostics Top 5 sont verrouillés. Demande à l’organisatrice d’ouvrir cette étape.</p>
     } @else {
@@ -30,15 +30,11 @@
         } @else {
           <ul class="recap-list">
             @for (candidate of selectedCandidates(); track candidate.id) {
-              <li [class.correct-answer]="officialIds().includes(candidate.id)">
+              <li>
                 <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
-                @if (officialIds().includes(candidate.id)) {
-                  <span class="correct-badge">✓ Bonne réponse</span>
-                }
               </li>
             }
           </ul>
-          <p class="score">{{ getHitCount(selectedIds()) }} / 5 bonnes réponses</p>
         }
       </section>
 
@@ -57,7 +53,6 @@
         }
       </section>
 
-      <a class="next-stage-link" routerLink="/classement">Passer au classement final →</a>
     } @else if (top5Locked()) {
       <section class="recap-section">
         <h2>Ton récapitulatif</h2>

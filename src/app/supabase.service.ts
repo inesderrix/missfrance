@@ -66,27 +66,14 @@ export function getRankingPredictionPoints(
     predictedRank: number,
     officialRanking: RankedCandidate[],
 ): number {
-    if (candidateId === undefined) return 0;
+    if (candidateId === undefined || predictedRank < 1 || predictedRank > 5) return 0;
 
-    if (
-        predictedRank === 1 &&
-        officialRanking.some(({ candidate_id, rang }) => rang === 1 && candidate_id === candidateId)
-    ) {
-        return 5;
-    }
+    const isExactMatch = officialRanking.some(
+        ({ candidate_id, rang }) => rang === predictedRank && candidate_id === candidateId,
+    );
+    if (!isExactMatch) return 0;
 
-    if (
-        predictedRank >= 2 &&
-        predictedRank <= 5 &&
-        officialRanking.some(
-            ({ candidate_id, rang }) =>
-                rang >= 2 && rang <= 5 && candidate_id === candidateId,
-        )
-    ) {
-        return 2;
-    }
-
-    return 0;
+    return predictedRank === 1 ? 5 : 2;
 }
 
 export function getRankingPoints(

@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { PageNavigation } from '../page-navigation/page-navigation';
 import {
   Candidate,
@@ -17,7 +16,7 @@ interface PlayerTop5Prediction {
 
 @Component({
   selector: 'app-top5',
-  imports: [RouterLink, PageNavigation],
+  imports: [PageNavigation],
   templateUrl: './top5.html',
   styleUrl: './top5.css',
 })
@@ -152,11 +151,6 @@ export class Top5 implements OnInit, OnDestroy {
     } finally {
       this.saving.set(false);
     }
-  }
-
-  getHitCount(candidateIds: number[]): number {
-    const officialIds = new Set(this.officialIds());
-    return candidateIds.filter((candidateId) => officialIds.has(candidateId)).length;
   }
 
   getCandidateRegions(candidateIds: number[]): string {

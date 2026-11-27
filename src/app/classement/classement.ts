@@ -124,12 +124,6 @@ export class Classement implements OnInit, OnDestroy {
     return `/img/460x0_miss-${regionSlug}-2026.webp`;
   }
 
-  isCorrectRank(candidateId: number, rank: number): boolean {
-    return this.officialRanking().some(
-      (result) => result.candidate_id === candidateId && result.rang === rank,
-    );
-  }
-
   startDragging(candidateId: number) {
     if (this.saving() || this.rankingLocked()) return;
     this.draggedCandidateId.set(candidateId);
@@ -166,15 +160,6 @@ export class Classement implements OnInit, OnDestroy {
     ids.splice(fromIndex, 1);
     ids.splice(toIndex, 0, candidateId);
     await this.persistRanking(ids);
-  }
-
-  getHitCount(): number {
-    const officialByRank = new Map(
-      this.officialRanking().map(({ rang, candidate_id }) => [rang, candidate_id]),
-    );
-    return this.rankingIds().filter(
-      (candidateId, index) => officialByRank.get(index + 1) === candidateId,
-    ).length;
   }
 
   private async persistRanking(candidateIds: number[]) {

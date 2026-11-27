@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { PageNavigation } from '../page-navigation/page-navigation';
 import {
   RankedCandidate,
   RoomPlayer,
@@ -28,7 +28,7 @@ interface PlayerScore {
 
 @Component({
   selector: 'app-scores',
-  imports: [RouterLink],
+  imports: [PageNavigation],
   templateUrl: './scores.html',
   styleUrl: './scores.css',
 })

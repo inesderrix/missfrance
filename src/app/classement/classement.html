@@ -28,17 +28,13 @@
           <ol class="ranking-list">
             @for (candidateId of rankingIds(); track candidateId; let index = $index) {
               @if (getCandidate(candidateId); as candidate) {
-                <li [class.correct-answer]="isCorrectRank(candidateId, index + 1)">
+                <li>
                   <strong>{{ rankLabel(index + 1) }}</strong>
                   <span>{{ candidate.region }} — {{ candidate.prenom }} {{ candidate.nom }}</span>
-                  @if (isCorrectRank(candidateId, index + 1)) {
-                    <span class="correct-badge">✓ Bon rang</span>
-                  }
                 </li>
               }
             }
           </ol>
-          <p class="score">{{ getHitCount() }} / 5 positions exactes</p>
         }
       </section>
 

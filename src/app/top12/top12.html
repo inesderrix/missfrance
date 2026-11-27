@@ -41,11 +41,8 @@
         } @else {
           <ul class="recap-list">
             @for (candidate of selectedCandidates(); track candidate.id) {
-              <li [class.correct-answer]="officialIds().includes(candidate.id)">
+              <li>
                 <strong>{{ candidate.region }}</strong> — {{ candidate.prenom }} {{ candidate.nom }}
-                @if (officialIds().length === 12 && officialIds().includes(candidate.id)) {
-                  <span class="correct-badge">✓ Bonne réponse</span>
-                }
               </li>
             }
           </ul>
@@ -59,7 +56,6 @@
         } @else if (officialIds().length !== 12) {
           <p>En attente de l’annonce des résultats par l’organisatrice…</p>
         } @else {
-          <p>Tu as {{ getHitCount(selectedIds()) }} bonne(s) réponse(s) sur 12.</p>
           <div class="official-list">
             @for (candidate of candidates(); track candidate.id) {
               @if (officialIds().includes(candidate.id)) {
@@ -68,11 +64,7 @@
             }
           </div>
         }
-
       </section>
-      @if (officialIds().length === 12) {
-        <a class="next-stage-link" routerLink="/top5">Passer à l’étape Top 5 →</a>
-      }
     } @else if (sortedCandidates().length === 0) {
       <p>Aucune candidate ne correspond à cette région.</p>
     } @else {

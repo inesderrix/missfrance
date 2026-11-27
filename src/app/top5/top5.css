@@ -73,19 +73,6 @@ h1 {
   font-weight: 700;
 }
 
-.next-stage-link {
-  display: block;
-  width: fit-content;
-  margin: 28px auto 0;
-  padding: 11px 16px;
-  border: 1px solid #c7a250;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #e4c36e, #b58a32);
-  color: #2b2110;
-  font-weight: 700;
-  text-decoration: none;
-}
-
 .search-label {
   display: block;
   width: min(100%, 440px);
@@ -212,19 +199,6 @@ h1 {
   margin-bottom: 4px;
   padding: 4px 8px;
   border-radius: 8px;
-}
-
-.recap-list li.correct-answer {
-  background: #e7f3df;
-  color: #315d2b;
-}
-
-.correct-badge {
-  display: inline-block;
-  margin-left: 6px;
-  color: #315d2b;
-  font-size: 0.85rem;
-  font-weight: 700;
 }
 
 .score {

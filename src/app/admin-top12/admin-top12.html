@@ -148,15 +148,7 @@
           @if (officialIds().length === 12) {
             <p class="success">Le résultat officiel du Top 12 est publié.</p>
             @if (currentSalon.statut === 'verrouille') {
-              <p>Les bonnes réponses sont affichées. Quand tu es prête, passe tout le salon à l’étape suivante.</p>
-              <button
-                type="button"
-                class="primary"
-                [disabled]="saving()"
-                (click)="reopenForTop5()"
-              >
-                {{ saving() ? 'Passage…' : 'Passer à l’étape Top 5' }}
-              </button>
+              <p>Les bonnes réponses sont affichées. Consulte les pronostics des joueurs ci-dessous avant de passer à l’étape suivante.</p>
             } @else {
               <p>Le salon est passé à l’étape Top 5.</p>
             }
@@ -255,6 +247,17 @@
                 }
               </article>
             }
+          }
+          @if (officialIds().length === 12 && currentSalon.statut === 'verrouille') {
+            <p>Quand tu es prête, fais passer tout le salon à l’étape suivante.</p>
+            <button
+              type="button"
+              class="primary publish-button"
+              [disabled]="saving()"
+              (click)="reopenForTop5()"
+            >
+              {{ saving() ? 'Passage…' : 'Passer à l’étape Top 5' }}
+            </button>
           }
         </details>
 
